@@ -36,7 +36,7 @@ jobs:
         python -m pip install --upgrade pip
         pip install requests openpyxl xlsxwriter Pillow
     
-    - name: 创建输出目录
+    - name: 创建目录
       run: |
         mkdir -p Input
         mkdir -p Output
@@ -44,14 +44,6 @@ jobs:
     - name: 运行处理程序
       run: |
         python magnet_processor.py
-    
-    - name: 检查 Output 目录内容
-      if: always()
-      run: |
-        echo "=== Output 目录内容 ==="
-        ls -la Output/ || echo "Output 目录为空"
-        echo "=== 进度文件 ==="
-        cat Output/.progress.json 2>/dev/null || echo "进度文件不存在"
     
     - name: 提交进度文件
       if: always()
@@ -62,10 +54,29 @@ jobs:
         # 只提交进度文件
         if [ -f "Output/.progress.json" ]; then
           git add -f Output/.progress.json
-          git diff --staged --quiet || git commit -m "更新处理进度 [skip ci]"
-          git push
+          git diff --staged --quiet || {
+            git commit -m "更新处理进度 [skip ci]"
+            git push
+          }
         else
           echo "进度文件不存在，跳过提交"
+        fi
+    
+    - name: 提交输出文件（如果有）
+      if: always()
+      run: |
+        git config --global user.name "github-actions[bot]"
+        git config --global user.email "github-actions[bot]@users.noreply.github.com"
+        
+        # 检查并提交输出文件
+        if ls Output/*.xlsx 1> /dev/null 2>&1; then
+          git add -f Output/*.xlsx
+          git diff --staged --quiet || {
+            git commit -m "更新输出文件 [skip ci]"
+            git push
+          }
+        else
+          echo "没有输出文件需要提交"
         fi
     
     - name: 上传输出文件到 Artifacts
@@ -75,3 +86,4 @@ jobs:
         name: output-files-${{ github.run_id }}
         path: Output/*.xlsx
         retention-days: 30
+        if-no-files-found: warn
