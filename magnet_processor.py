@@ -17,7 +17,7 @@ from pathlib import Path
 
 # ========== 用户可调配置（直接修改此处） ==========
 REQUEST_INTERVAL = 1            # API 请求间隔（秒）
-BATCH_SIZE = 2                 # 每批处理行数
+BATCH_SIZE = 50                 # 每批处理行数
 MAX_RETRIES = 5                 # 下载图片重试次数
 TIMEOUT = 20                    # 请求超时（秒）
 DEFAULT_COL_WIDTH = 80          # 截图列宽（字符数）
@@ -341,12 +341,14 @@ def save_batch_to_file(batch_data, headers, batch_num, output_dir, base_name):
     print(f"  批次 {batch_num} 保存完成")
 
 
-def process_single_file(file_path, output_dir, progress_manager):
+def process_single_file(file_path, output_dir, progress_manager, file_index=None, total_files=None):
     """
     处理单个 Excel 文件，支持断点续传
     第一行为标题行，从第二行开始处理数据
+    返回: (processed_rows, should_continue)
     """
-    print(f"\n处理文件: {file_path.name}")
+    file_label = f"[{file_index}/{total_files}] " if file_index and total_files else ""
+    print(f"{file_label}处理文件: {file_path.name}")
     
     # 获取已处理的数据行数（不含标题行）
     start_row = progress_manager.get_processed_rows(file_path)
