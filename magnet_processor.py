@@ -15,17 +15,17 @@ import hashlib
 from datetime import datetime
 from pathlib import Path
 
-# ========== 配置参数（可通过环境变量覆盖） ==========
-REQUEST_INTERVAL = float(os.getenv('REQUEST_INTERVAL', 1))        # API 请求间隔（秒）
-BATCH_SIZE = int(os.getenv('BATCH_SIZE', 2))                      # 每批处理行数
-MAX_RETRIES = int(os.getenv('MAX_RETRIES', 5))                    # 下载图片重试次数
-TIMEOUT = int(os.getenv('TIMEOUT', 20))                           # 请求超时（秒）
-DEFAULT_COL_WIDTH = int(os.getenv('DEFAULT_COL_WIDTH', 80))       # 截图列宽（字符数）
-DEFAULT_ROW_HEIGHT = int(os.getenv('DEFAULT_ROW_HEIGHT', 274))    # 截图行高（磅）
-JPEG_QUALITY = int(os.getenv('JPEG_QUALITY', 85))                 # JPEG 压缩质量
-MAX_RUN_TIME = int(os.getenv('MAX_RUN_TIME', 50))                 # 单次最大运行时间（分钟）
-MAX_ROWS_PER_RUN = int(os.getenv('MAX_ROWS_PER_RUN', 200))        # 单次运行最大处理行数
-# ====================================================
+# ========== 用户可调配置（直接修改此处） ==========
+REQUEST_INTERVAL = 1            # API 请求间隔（秒）
+BATCH_SIZE = 2                 # 每批处理行数
+MAX_RETRIES = 5                 # 下载图片重试次数
+TIMEOUT = 20                    # 请求超时（秒）
+DEFAULT_COL_WIDTH = 80          # 截图列宽（字符数）
+DEFAULT_ROW_HEIGHT = 274        # 截图行高（磅）
+JPEG_QUALITY = 85               # JPEG 压缩质量
+MAX_RUN_TIME = 50               # 单次最大运行时间（分钟）
+MAX_ROWS_PER_RUN = 200          # 单次运行最大处理行数
+# ===================================================
 
 # 尝试导入 PIL
 try:
@@ -601,17 +601,4 @@ def main():
 
 
 if __name__ == "__main__":
-    # 支持从环境变量读取配置（GitHub Actions）
-    if os.getenv('GITHUB_ACTIONS') == 'true':
-        MAX_ROWS_PER_RUN = int(os.getenv('MAX_ROWS_PER_RUN', 200))
-        MAX_RUN_TIME = int(os.getenv('MAX_RUN_TIME', 50))
-        REQUEST_INTERVAL = float(os.getenv('REQUEST_INTERVAL', 1))
-        BATCH_SIZE = int(os.getenv('BATCH_SIZE', 50))
-        print(f"GitHub Actions 环境配置:")
-        print(f"  MAX_ROWS_PER_RUN: {MAX_ROWS_PER_RUN}")
-        print(f"  MAX_RUN_TIME: {MAX_RUN_TIME}")
-        print(f"  REQUEST_INTERVAL: {REQUEST_INTERVAL}")
-        print(f"  BATCH_SIZE: {BATCH_SIZE}")
-        print()
-    
     main()
