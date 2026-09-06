@@ -17,7 +17,7 @@ from pathlib import Path
 
 # ========== 配置参数（可通过环境变量覆盖） ==========
 REQUEST_INTERVAL = float(os.getenv('REQUEST_INTERVAL', 1))        # API 请求间隔（秒）
-BATCH_SIZE = int(os.getenv('BATCH_SIZE', 50))                     # 每批处理行数
+BATCH_SIZE = int(os.getenv('BATCH_SIZE', 2))                      # 每批处理行数
 MAX_RETRIES = int(os.getenv('MAX_RETRIES', 5))                    # 下载图片重试次数
 TIMEOUT = int(os.getenv('TIMEOUT', 20))                           # 请求超时（秒）
 DEFAULT_COL_WIDTH = int(os.getenv('DEFAULT_COL_WIDTH', 80))       # 截图列宽（字符数）
