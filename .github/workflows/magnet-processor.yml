@@ -78,7 +78,7 @@ jobs:
         mkdir -p Input
         mkdir -p Output
     
-    - name: 运行处理程序（使用 timeout 命令强制停止）
+    - name: 运行处理程序
       if: steps.check_run.outputs.should_run == 'true'
       run: |
         # 使用 timeout 命令在5小时后强制终止
@@ -95,19 +95,20 @@ jobs:
         MAX_RUN_TIME: 300
         MAX_ROWS_PER_RUN: 999999
     
-    - name: 提交进度文件
+    - name: 最终提交所有文件
       if: always() && steps.check_run.outputs.should_run == 'true'
       run: |
         git config --global user.name "github-actions[bot]"
         git config --global user.email "github-actions[bot]@users.noreply.github.com"
         
-        if [ -f "Output/.progress.json" ]; then
-          git add -f Output/.progress.json
-          git diff --staged --quiet || {
-            git commit -m "更新处理进度 [skip ci]"
-            git push
-          }
-        fi
+        # 添加所有输出文件
+        git add -f Output/.progress.json || true
+        git add -f Output/*.xlsx || true
+        
+        git diff --staged --quiet || {
+          git commit -m "最终提交所有输出文件 [skip ci]"
+          git push
+        }
     
     - name: 上传输出文件到 Artifacts
       if: always() && steps.check_run.outputs.should_run == 'true'
