@@ -1,3 +1,4 @@
+# .gitignore
 # Python
 __pycache__/
 *.py[cod]
@@ -37,13 +38,13 @@ env/
 *~
 .DS_Store
 
-# 项目特定
-Input/*.xlsx
-Input/*.xls
-Input/*.xlsm
+# 项目特定 - 不忽略 Input 目录下的文件
+# Input/*.xlsx  # 注释掉或删除这一行
+# Input/*.xls   # 注释掉或删除这一行
+# Input/*.xlsm  # 注释掉或删除这一行
 !Input/.gitkeep
 
-# 输出文件 - 不提交到仓库（使用 Artifacts 保存）
+# 输出文件 - 不提交到仓库
 Output/*.xlsx
 Output/*.xls
 !Output/.gitkeep
