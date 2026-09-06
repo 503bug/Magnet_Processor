@@ -39,16 +39,16 @@ env/
 .DS_Store
 
 # 项目特定 - 不忽略 Input 目录下的文件
-# Input/*.xlsx  # 注释掉或删除这一行
-# Input/*.xls   # 注释掉或删除这一行
-# Input/*.xlsm  # 注释掉或删除这一行
+# Input/*.xlsx  # 注释掉，允许提交输入文件
+# Input/*.xls   # 注释掉
+# Input/*.xlsm  # 注释掉
 !Input/.gitkeep
 
-# 输出文件 - 不提交到仓库
-Output/*.xlsx
-Output/*.xls
+# 输出文件 - 允许提交
+# Output/*.xlsx  # 注释掉，允许提交
+# Output/*.xls   # 注释掉
 !Output/.gitkeep
-!Output/.progress.json
+!Output/.progress.json  # 允许提交进度文件
 
 # 临时文件
 *.tmp
