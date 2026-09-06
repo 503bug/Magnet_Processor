@@ -3,8 +3,8 @@ name: 磁力链接批量处理
 
 on:
   schedule:
-    - cron: '0 2 * * *'  # 每天凌晨2点运行
-  workflow_dispatch:      # 支持手动触发
+    - cron: '0 2 * * *'
+  workflow_dispatch:
   push:
     branches:
       - main
@@ -45,27 +45,30 @@ jobs:
       run: |
         python magnet_processor.py
     
-    - name: 提交进度文件和输出文件
+    - name: 检查 Output 目录内容
+      if: always()
+      run: |
+        echo "=== Output 目录内容 ==="
+        ls -la Output/ || echo "Output 目录为空"
+        echo "=== 进度文件 ==="
+        cat Output/.progress.json 2>/dev/null || echo "进度文件不存在"
+    
+    - name: 提交进度文件
       if: always()
       run: |
         git config --global user.name "github-actions[bot]"
         git config --global user.email "github-actions[bot]@users.noreply.github.com"
         
-        # 添加进度文件（如果存在）
+        # 只提交进度文件
         if [ -f "Output/.progress.json" ]; then
           git add -f Output/.progress.json
+          git diff --staged --quiet || git commit -m "更新处理进度 [skip ci]"
+          git push
+        else
+          echo "进度文件不存在，跳过提交"
         fi
-        
-        # 添加输出文件（如果存在）
-        if ls Output/*.xlsx 1> /dev/null 2>&1; then
-          git add -f Output/*.xlsx
-        fi
-        
-        # 如果有文件被添加，则提交
-        git diff --staged --quiet || git commit -m "更新处理进度和输出文件 [skip ci]"
-        git push
     
-    - name: 上传输出文件到 Artifacts（备份）
+    - name: 上传输出文件到 Artifacts
       if: always()
       uses: actions/upload-artifact@v4
       with:
