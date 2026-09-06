@@ -1,0 +1,13 @@
+{
+  "Input/File_001.xlsx": {
+    "processed_rows": 6,
+    "total_rows": 10,
+    "file_hash": "1367367c0818ae7bf757daa3feaf9ce2",
+    "completed": false,
+    "last_modified": "2026-09-06T14:08:46.137022",
+    "batches_created": [
+      1
+    ]
+  },
+  "_updated_at": "2026-09-06T14:08:46.137032"
+}
