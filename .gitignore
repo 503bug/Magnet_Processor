@@ -41,10 +41,13 @@ env/
 Input/*.xlsx
 Input/*.xls
 Input/*.xlsm
+!Input/.gitkeep
+
+# 输出文件 - 不提交到仓库（使用 Artifacts 保存）
 Output/*.xlsx
 Output/*.xls
-!Input/.gitkeep
 !Output/.gitkeep
+!Output/.progress.json
 
 # 临时文件
 *.tmp
