@@ -50,9 +50,18 @@ jobs:
       run: |
         git config --global user.name "github-actions[bot]"
         git config --global user.email "github-actions[bot]@users.noreply.github.com"
-        # 强制添加进度文件和输出文件
-        git add -f Output/.progress.json
-        git add -f Output/*.xlsx
+        
+        # 添加进度文件（如果存在）
+        if [ -f "Output/.progress.json" ]; then
+          git add -f Output/.progress.json
+        fi
+        
+        # 添加输出文件（如果存在）
+        if ls Output/*.xlsx 1> /dev/null 2>&1; then
+          git add -f Output/*.xlsx
+        fi
+        
+        # 如果有文件被添加，则提交
         git diff --staged --quiet || git commit -m "更新处理进度和输出文件 [skip ci]"
         git push
     
