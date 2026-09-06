@@ -12,6 +12,7 @@ import sys
 import glob
 import json
 import hashlib
+import subprocess
 from datetime import datetime
 from pathlib import Path
 
@@ -119,6 +120,43 @@ def get_file_hash(file_path):
             hasher.update(buf)
             buf = f.read(65536)
     return hasher.hexdigest()
+
+
+def git_commit_files(output_dir, batch_num, file_path=None):
+    """提交批次文件和进度文件到 Git"""
+    try:
+        # 添加所有输出文件
+        progress_file = output_dir / '.progress.json'
+        if progress_file.exists():
+            subprocess.run(['git', 'add', '-f', str(progress_file)], 
+                          check=False, capture_output=True)
+        
+        # 添加当前批次的 Excel 文件
+        batch_pattern = f'{batch_num:03d}_*.xlsx'
+        import glob
+        for xlsx_file in glob.glob(str(output_dir / batch_pattern)):
+            subprocess.run(['git', 'add', '-f', xlsx_file], 
+                          check=False, capture_output=True)
+        
+        # 检查是否有变更
+        result = subprocess.run(['git', 'diff', '--staged', '--quiet'], 
+                               capture_output=True)
+        
+        if result.returncode != 0:
+            # 有变更，提交
+            commit_msg = f"更新进度和批次 {batch_num:03d} [skip ci]"
+            subprocess.run(['git', 'commit', '-m', commit_msg], 
+                          check=True, capture_output=True)
+            subprocess.run(['git', 'push'], check=True, capture_output=True)
+            print(f"  ✅ Git 提交成功: 批次 {batch_num:03d}")
+            return True
+        else:
+            print(f"  ⏭️  无变更，跳过提交")
+            return False
+            
+    except Exception as e:
+        print(f"  ⚠️  Git 提交失败: {e}")
+        return False
 
 
 class ProgressManager:
@@ -301,8 +339,8 @@ def save_batch_to_file(batch_data, headers, batch_num, output_dir, base_name):
     output_filename = f"{batch_num:03d}_{base_name}.xlsx"
     output_path = output_dir / output_filename
     
-    print(f"  保存批次 {batch_num} 到: {output_filename}")
-    print(f"  数据行数: {len(batch_data)}")
+    print(f"  📦 保存批次 {batch_num} 到: {output_filename}")
+    print(f"  📊 数据行数: {len(batch_data)}")
     
     workbook = xlsxwriter.Workbook(str(output_path))
     worksheet = workbook.add_worksheet()
@@ -313,14 +351,11 @@ def save_batch_to_file(batch_data, headers, batch_num, output_dir, base_name):
     # ===== 写入标题行（第1行，索引0） =====
     for col_idx, header in enumerate(headers):
         worksheet.write(0, col_idx, header)
-        print(f"    标题 {col_idx}: {header}")
     
     # ===== 写入数据行（从第2行开始，索引1） =====
     for row_idx, row_data in enumerate(batch_data):
         # row_idx 从0开始，数据从第2行（索引1）开始写入
         excel_row = row_idx + 1  # 第2行开始（索引1）
-        
-        print(f"    数据行 {row_idx}: 写入到第 {excel_row + 1} 行")
         
         worksheet.write(excel_row, 0, row_data['magnet'])
         worksheet.write(excel_row, 1, row_data['name'])
@@ -340,7 +375,7 @@ def save_batch_to_file(batch_data, headers, batch_num, output_dir, base_name):
                     col += 1
     
     workbook.close()
-    print(f"  批次 {batch_num} 保存完成")
+    print(f"  ✅ 批次 {batch_num} 保存完成")
 
 
 def process_single_file(file_path, output_dir, progress_manager, file_index=None, total_files=None):
@@ -384,6 +419,7 @@ def process_single_file(file_path, output_dir, progress_manager, file_index=None
         start_time = time.time()
         
         print(f"  本次计划处理: {max_rows_to_process} 行数据")
+        print(f"  起始批次号: {batch_num}")
         
         # 跳过已处理的行
         row_counter = 0
@@ -449,10 +485,14 @@ def process_single_file(file_path, output_dir, progress_manager, file_index=None
             
             time.sleep(REQUEST_INTERVAL)
             
+            # ===== 每处理 BATCH_SIZE 条，保存一批 =====
             if len(batch_data) >= BATCH_SIZE:
                 file_base = file_path.stem
+                
+                # 1. 保存 Excel 文件
                 save_batch_to_file(batch_data, headers, batch_num, output_dir, file_base)
                 
+                # 2. 更新进度
                 progress_manager.update_file_state(
                     file_path, 
                     start_row + processed_in_this_run,
@@ -460,17 +500,32 @@ def process_single_file(file_path, output_dir, progress_manager, file_index=None
                     completed=False,
                     batch_num=batch_num
                 )
+                print(f"  💾 进度已保存: {start_row + processed_in_this_run}/{total_rows}")
+                
+                # 3. 立即提交到 Git（上传）
+                git_commit_files(output_dir, batch_num, file_path)
+                
+                # 4. 清理临时文件
+                for row in batch_data:
+                    for tmp_path in row.get('temp_files', []):
+                        try:
+                            if os.path.exists(tmp_path):
+                                os.unlink(tmp_path)
+                        except:
+                            pass
                 
                 batch_data = []
                 batch_num += 1
                 
                 elapsed = time.time() - start_time
-                print(f"  已处理 {start_row + processed_in_this_run}/{total_rows} 行数据，耗时 {elapsed/60:.1f} 分钟")
+                print(f"  📈 已处理 {start_row + processed_in_this_run}/{total_rows} 行数据，耗时 {elapsed/60:.1f} 分钟")
                 print()
         
+        # ===== 处理剩余不足一批的数据 =====
         if batch_data:
             file_base = file_path.stem
             save_batch_to_file(batch_data, headers, batch_num, output_dir, file_base)
+            
             progress_manager.update_file_state(
                 file_path,
                 start_row + processed_in_this_run,
@@ -478,6 +533,20 @@ def process_single_file(file_path, output_dir, progress_manager, file_index=None
                 completed=False,
                 batch_num=batch_num
             )
+            print(f"  💾 进度已保存: {start_row + processed_in_this_run}/{total_rows}")
+            
+            # 提交最后一批
+            git_commit_files(output_dir, batch_num, file_path)
+            
+            # 清理临时文件
+            for row in batch_data:
+                for tmp_path in row.get('temp_files', []):
+                    try:
+                        if os.path.exists(tmp_path):
+                            os.unlink(tmp_path)
+                    except:
+                        pass
+            
             batch_data = []
         
         total_processed = start_row + processed_in_this_run
@@ -487,6 +556,7 @@ def process_single_file(file_path, output_dir, progress_manager, file_index=None
         else:
             print(f"  ⏳ 文件 {file_path.name} 部分完成: {total_processed}/{total_rows}")
         
+        # 清理所有临时文件
         for tmp in temp_files:
             try:
                 if os.path.exists(tmp):
@@ -555,7 +625,8 @@ def main():
     
     for file_path in unprocessed_files:
         processed, should_continue = process_single_file(
-            file_path, output_dir, progress_manager
+            file_path, output_dir, progress_manager,
+            file_index=files_processed+1, total_files=len(unprocessed_files)
         )
         total_processed += processed
         files_processed += 1
