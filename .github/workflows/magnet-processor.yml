@@ -1,0 +1,68 @@
+name: 磁力链接批量处理
+
+on:
+  # 定时触发 - 每天凌晨2点运行
+  schedule:
+    - cron: '0 2 * * *'
+  # 允许手动触发
+  workflow_dispatch:
+    inputs:
+      max_rows:
+        description: '本次最大处理行数'
+        required: false
+        default: '200'
+        type: string
+      max_time:
+        description: '最大运行时间（分钟）'
+        required: false
+        default: '50'
+        type: string
+
+jobs:
+  process-magnets:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    
+    steps:
+    - name: Checkout 代码
+      uses: actions/checkout@v4
+      with:
+        persist-credentials: true
+    
+    - name: 设置 Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
+        cache: 'pip'
+    
+    - name: 安装依赖
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+    
+    - name: 创建目录
+      run: |
+        mkdir -p Input
+        mkdir -p Output
+    
+    - name: 运行处理程序
+      env:
+        GITHUB_ACTIONS: true
+        MAX_ROWS_PER_RUN: ${{ github.event.inputs.max_rows || 200 }}
+        MAX_RUN_TIME: ${{ github.event.inputs.max_time || 50 }}
+        REQUEST_INTERVAL: 1
+        BATCH_SIZE: 50
+      run: |
+        python magnet_processor.py
+    
+    - name: 提交进度和输出
+      if: always()
+      run: |
+        git config --global user.name "github-actions[bot]"
+        git config --global user.email "github-actions[bot]@users.noreply.github.com"
+        # 提交进度文件
+        git add Output/.progress.json
+        # 提交输出文件（如果有新增）
+        git add Output/*.xlsx
+        git diff --staged --quiet || git commit -m "更新处理进度和输出 [skip ci]"
+        git push
