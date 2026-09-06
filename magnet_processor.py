@@ -17,7 +17,7 @@ from pathlib import Path
 
 # ========== 用户可调配置（直接修改此处） ==========
 REQUEST_INTERVAL = 1            # API 请求间隔（秒）
-BATCH_SIZE = 2                 # 每批处理行数
+BATCH_SIZE = 5                 # 每批处理行数
 MAX_RETRIES = 5                 # 下载图片重试次数
 TIMEOUT = 20                    # 请求超时（秒）
 DEFAULT_COL_WIDTH = 80          # 截图列宽（字符数）
@@ -158,8 +158,8 @@ class ProgressManager:
         file_key = str(file_path)
         if file_key not in self.state:
             self.state[file_key] = {
-                'processed_rows': 0,      # 已处理的数据行数（不含标题行）
-                'total_rows': 0,           # 总数据行数（不含标题行）
+                'processed_rows': 0,
+                'total_rows': 0,
                 'file_hash': '',
                 'completed': False,
                 'last_modified': '',
@@ -262,7 +262,6 @@ def count_data_rows_in_file(file_path):
     try:
         wb = load_workbook(file_path, read_only=True)
         ws = wb.active
-        # 从第2行开始计数（跳过标题行）
         row_count = sum(1 for _ in ws.iter_rows(min_row=2))
         wb.close()
         return row_count
@@ -283,9 +282,7 @@ def get_headers_from_file(file_path):
         wb.close()
         
         if first_row:
-            # 取前4列作为标题
             headers = [str(h) if h else "" for h in first_row[:4]]
-            # 如果标题为空，使用默认值
             if not any(headers):
                 return ["链接", "Resource Name", "Number of Files", "Total File Size"]
             return headers
@@ -299,6 +296,7 @@ def get_headers_from_file(file_path):
 def save_batch_to_file(batch_data, headers, batch_num, output_dir, base_name):
     """
     保存批次数据为 Excel 文件，包含标题行
+    修复：数据从第2行开始写入（第1行是标题）
     """
     output_filename = f"{batch_num:03d}_{base_name}.xlsx"
     output_path = output_dir / output_filename
@@ -316,9 +314,9 @@ def save_batch_to_file(batch_data, headers, batch_num, output_dir, base_name):
         worksheet.write(0, col_idx, header)
     
     # ===== 写入数据行（从第2行开始） =====
-    for row_idx, row_data in enumerate(batch_data, start=1):
-        # row_idx 从1开始，对应Excel的第2行（因为第1行是标题）
-        excel_row = row_idx + 1
+    for row_idx, row_data in enumerate(batch_data):
+        # row_idx 从0开始，对应Excel的第2行（因为第1行是标题）
+        excel_row = row_idx + 2  # 第2行开始写入数据
         
         worksheet.write(excel_row, 0, row_data['magnet'])
         worksheet.write(excel_row, 1, row_data['name'])
@@ -350,40 +348,31 @@ def process_single_file(file_path, output_dir, progress_manager, file_index=None
     file_label = f"[{file_index}/{total_files}] " if file_index and total_files else ""
     print(f"{file_label}处理文件: {file_path.name}")
     
-    # 获取已处理的数据行数（不含标题行）
     start_row = progress_manager.get_processed_rows(file_path)
     if start_row > 0:
         print(f"  从第 {start_row + 2} 行继续（已处理 {start_row} 行数据）")
     
     try:
-        # 打开源文件
         wb_in = load_workbook(file_path, read_only=True)
         ws_in = wb_in.active
         
-        # ===== 读取标题行 =====
         headers = get_headers_from_file(file_path)
         print(f"  标题行: {headers}")
         
-        # ===== 统计总数据行数（不含标题行） =====
         total_rows = count_data_rows_in_file(file_path)
         print(f"  总数据行数: {total_rows}")
         
-        # 如果已经全部处理完成
         if start_row >= total_rows:
             progress_manager.mark_file_processed(file_path)
             print(f"  ✓ 文件 {file_path.name} 已全部处理完成！")
             wb_in.close()
             return 0, False
         
-        # 初始化批次
         batch_num = 1
         if start_row > 0:
             batch_num = (start_row // BATCH_SIZE) + 1
         
-        # Excel 行号：从第2行开始（第1行是标题）
-        # 已处理 start_row 行，所以当前从 start_row + 2 行开始
         current_excel_row = start_row + 2
-        
         processed_in_this_run = 0
         max_rows_to_process = min(MAX_ROWS_PER_RUN, total_rows - start_row)
         batch_data = []
@@ -392,8 +381,7 @@ def process_single_file(file_path, output_dir, progress_manager, file_index=None
         
         print(f"  本次计划处理: {max_rows_to_process} 行数据")
         
-        # ===== 跳过已处理的行 =====
-        # 从第2行开始，跳过 start_row 行
+        # 跳过已处理的行
         row_counter = 0
         for row in ws_in.iter_rows(min_row=2, values_only=True):
             if row_counter >= start_row:
@@ -401,20 +389,17 @@ def process_single_file(file_path, output_dir, progress_manager, file_index=None
             row_counter += 1
             current_excel_row += 1
         
-        # ===== 处理新数据 =====
+        # 处理新数据
         for row in ws_in.iter_rows(min_row=current_excel_row, values_only=True):
-            # 检查是否达到限制
             if processed_in_this_run >= max_rows_to_process:
                 print(f"  已达到本次运行行数限制: {max_rows_to_process}")
                 break
             
-            # 检查运行时间
             elapsed = time.time() - start_time
             if elapsed > MAX_RUN_TIME * 60:
                 print(f"  已达到运行时间限制: {MAX_RUN_TIME} 分钟")
                 break
             
-            # 检查是否为空行
             if not row or not row[0]:
                 print(f"  第 {current_excel_row} 行为空，停止处理")
                 break
@@ -432,7 +417,6 @@ def process_single_file(file_path, output_dir, progress_manager, file_index=None
                 'temp_files': []
             }
             
-            # 处理磁力链接
             if magnet.startswith("magnet:"):
                 info = get_magnet_info(magnet)
                 if info:
@@ -446,7 +430,6 @@ def process_single_file(file_path, output_dir, progress_manager, file_index=None
                 print(f"    警告: 不是有效磁力链接，跳过")
                 row_data['name'] = "Invalid Link"
             
-            # 下载截图
             if row_data['screenshots']:
                 for s in row_data['screenshots']:
                     img_url = s.get("screenshot")
@@ -460,15 +443,12 @@ def process_single_file(file_path, output_dir, progress_manager, file_index=None
             processed_in_this_run += 1
             current_excel_row += 1
             
-            # 控制 API 请求频率
             time.sleep(REQUEST_INTERVAL)
             
-            # 当批次达到 BATCH_SIZE 时，保存批次
             if len(batch_data) >= BATCH_SIZE:
                 file_base = file_path.stem
                 save_batch_to_file(batch_data, headers, batch_num, output_dir, file_base)
                 
-                # 更新进度（已处理的数据行数）
                 progress_manager.update_file_state(
                     file_path, 
                     start_row + processed_in_this_run,
@@ -484,7 +464,6 @@ def process_single_file(file_path, output_dir, progress_manager, file_index=None
                 print(f"  已处理 {start_row + processed_in_this_run}/{total_rows} 行数据，耗时 {elapsed/60:.1f} 分钟")
                 print()
         
-        # ===== 保存最后一个批次 =====
         if batch_data:
             file_base = file_path.stem
             save_batch_to_file(batch_data, headers, batch_num, output_dir, file_base)
@@ -497,7 +476,6 @@ def process_single_file(file_path, output_dir, progress_manager, file_index=None
             )
             batch_data = []
         
-        # ===== 检查是否全部完成 =====
         total_processed = start_row + processed_in_this_run
         if total_processed >= total_rows:
             progress_manager.mark_file_processed(file_path)
@@ -505,7 +483,6 @@ def process_single_file(file_path, output_dir, progress_manager, file_index=None
         else:
             print(f"  ⏳ 文件 {file_path.name} 部分完成: {total_processed}/{total_rows}")
         
-        # ===== 清理临时图片文件 =====
         for tmp in temp_files:
             try:
                 if os.path.exists(tmp):
@@ -515,7 +492,6 @@ def process_single_file(file_path, output_dir, progress_manager, file_index=None
         
         wb_in.close()
         
-        # 判断是否应继续处理
         elapsed = time.time() - start_time
         should_continue = (
             processed_in_this_run < max_rows_to_process and
@@ -549,18 +525,14 @@ def main():
     print(f"  TIMEOUT: {TIMEOUT} 秒")
     print("-" * 60)
     
-    # 设置目录
     input_dir = Path("Input")
     output_dir = Path("Output")
     
-    # 创建目录
     input_dir.mkdir(exist_ok=True)
     output_dir.mkdir(exist_ok=True)
     
-    # 初始化进度管理器
     progress_manager = ProgressManager(input_dir, output_dir)
     
-    # 获取未处理的文件
     unprocessed_files = get_unprocessed_files(input_dir, progress_manager)
     
     if not unprocessed_files:
@@ -574,7 +546,6 @@ def main():
         print(f"  - {f.name} (已处理 {processed}/{total} 行数据)")
     print()
     
-    # 处理文件
     total_processed = 0
     files_processed = 0
     
@@ -593,7 +564,6 @@ def main():
             print("=" * 60)
             return
     
-    # 全部完成
     print("\n" + "=" * 60)
     print("🎉 所有文件处理完成！")
     print(f"  处理文件数: {files_processed}")
