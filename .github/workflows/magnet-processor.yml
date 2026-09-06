@@ -3,20 +3,13 @@ name: 磁力链接批量处理
 
 on:
   schedule:
-    - cron: '0 2 * * *'
+    - cron: '*/6 * * * *'  # 每6分钟触发一次
   workflow_dispatch:
-  push:
-    branches:
-      - main
-      - master
-    paths:
-      - 'Input/**'
-      - 'magnet_processor.py'
 
 jobs:
   process-magnets:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 310    # 5小时 + 10分钟缓冲
     
     steps:
     - name: Checkout 代码
@@ -25,63 +18,100 @@ jobs:
         persist-credentials: true
         fetch-depth: 0
     
+    - name: 检查是否应该运行
+      id: check_run
+      run: |
+        # 检查是否有输入文件
+        if [ ! -d "Input" ] || [ -z "$(ls -A Input/*.xlsx 2>/dev/null)" ]; then
+          echo "没有输入文件，跳过运行"
+          echo "should_run=false" >> $GITHUB_OUTPUT
+          exit 0
+        fi
+        
+        # 检查进度文件，判断是否所有文件都已处理完成
+        if [ -f "Output/.progress.json" ]; then
+          # 检查是否所有文件都标记为已完成
+          COMPLETED=$(jq -r '.[] | select(.completed == true) | .completed' Output/.progress.json 2>/dev/null | wc -l)
+          TOTAL=$(jq -r 'keys | length' Output/.progress.json 2>/dev/null | wc -l)
+          TOTAL=$((TOTAL - 1))
+          
+          if [ "$COMPLETED" -eq "$TOTAL" ] && [ "$TOTAL" -gt 0 ]; then
+            echo "所有文件已处理完成，跳过运行"
+            echo "should_run=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          
+          # 检查上次运行时间，避免冲突
+          LAST_RUN=$(jq -r '._updated_at' Output/.progress.json 2>/dev/null)
+          if [ -n "$LAST_RUN" ]; then
+            LAST_RUN_EPOCH=$(date -d "$LAST_RUN" +%s 2>/dev/null || echo 0)
+            CURRENT_EPOCH=$(date +%s)
+            DIFF=$((CURRENT_EPOCH - LAST_RUN_EPOCH))
+            
+            # 如果距离上次运行少于5分钟，跳过（避免并发）
+            if [ $DIFF -lt 300 ]; then
+              echo "距离上次运行不到5分钟，跳过"
+              echo "should_run=false" >> $GITHUB_OUTPUT
+              exit 0
+            fi
+          fi
+        fi
+        
+        echo "should_run=true" >> $GITHUB_OUTPUT
+    
     - name: 设置 Python
-      uses: actions/setup-python@v5
+      if: steps.check_run.outputs.should_run == 'true'
+      uses: actions/setup-python@v6
       with:
         python-version: '3.10'
         cache: 'pip'
     
     - name: 安装依赖
+      if: steps.check_run.outputs.should_run == 'true'
       run: |
         python -m pip install --upgrade pip
-        pip install requests openpyxl xlsxwriter Pillow
+        pip install requests openpyxl xlsxwriter Pillow jq
     
     - name: 创建目录
+      if: steps.check_run.outputs.should_run == 'true'
       run: |
         mkdir -p Input
         mkdir -p Output
     
-    - name: 运行处理程序
+    - name: 运行处理程序（使用 timeout 命令强制停止）
+      if: steps.check_run.outputs.should_run == 'true'
       run: |
-        python magnet_processor.py
+        # 使用 timeout 命令在5小时后强制终止
+        timeout 5h python magnet_processor.py || {
+          EXIT_CODE=$?
+          if [ $EXIT_CODE -eq 124 ]; then
+            echo "运行超时（5小时），正常停止"
+          else
+            echo "程序异常退出，退出码: $EXIT_CODE"
+            exit $EXIT_CODE
+          fi
+        }
+      env:
+        MAX_RUN_TIME: 300
+        MAX_ROWS_PER_RUN: 999999
     
     - name: 提交进度文件
-      if: always()
+      if: always() && steps.check_run.outputs.should_run == 'true'
       run: |
         git config --global user.name "github-actions[bot]"
         git config --global user.email "github-actions[bot]@users.noreply.github.com"
         
-        # 只提交进度文件
         if [ -f "Output/.progress.json" ]; then
           git add -f Output/.progress.json
           git diff --staged --quiet || {
             git commit -m "更新处理进度 [skip ci]"
             git push
           }
-        else
-          echo "进度文件不存在，跳过提交"
-        fi
-    
-    - name: 提交输出文件（如果有）
-      if: always()
-      run: |
-        git config --global user.name "github-actions[bot]"
-        git config --global user.email "github-actions[bot]@users.noreply.github.com"
-        
-        # 检查并提交输出文件
-        if ls Output/*.xlsx 1> /dev/null 2>&1; then
-          git add -f Output/*.xlsx
-          git diff --staged --quiet || {
-            git commit -m "更新输出文件 [skip ci]"
-            git push
-          }
-        else
-          echo "没有输出文件需要提交"
         fi
     
     - name: 上传输出文件到 Artifacts
-      if: always()
-      uses: actions/upload-artifact@v4
+      if: always() && steps.check_run.outputs.should_run == 'true'
+      uses: actions/upload-artifact@v5
       with:
         name: output-files-${{ github.run_id }}
         path: Output/*.xlsx
