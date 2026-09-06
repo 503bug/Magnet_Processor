@@ -3,14 +3,15 @@ name: 磁力链接批量处理
 
 on:
   schedule:
-    - cron: '0 2 * * *'
-  workflow_dispatch:
+    - cron: '0 2 * * *'  # 每天凌晨2点运行
+  workflow_dispatch:      # 支持手动触发
   push:
     branches:
       - main
       - master
     paths:
       - 'Input/**'
+      - 'magnet_processor.py'
 
 jobs:
   process-magnets:
@@ -23,28 +24,6 @@ jobs:
       with:
         persist-credentials: true
         fetch-depth: 0
-    
-    - name: 显示当前目录结构
-      run: |
-        echo "=== 当前目录 ==="
-        pwd
-        echo "=== 目录结构 ==="
-        tree -L 2 || ls -la
-    
-    - name: 检查 Input 目录
-      run: |
-        if [ -d "Input" ]; then
-          echo "Input 目录存在"
-          echo "=== Input 目录文件列表 ==="
-          ls -la Input/
-          echo "=== Input 目录文件详情 ==="
-          find Input -type f -exec ls -lh {} \;
-          echo "=== 文件 MD5 值 ==="
-          find Input -type f -exec md5sum {} \;
-        else
-          echo "Input 目录不存在"
-          mkdir -p Input
-        fi
     
     - name: 设置 Python
       uses: actions/setup-python@v5
@@ -59,44 +38,28 @@ jobs:
     
     - name: 创建输出目录
       run: |
+        mkdir -p Input
         mkdir -p Output
-        ls -la Output/
     
     - name: 运行处理程序
       run: |
         python magnet_processor.py
-      env:
-        PYTHONUNBUFFERED: 1
     
-    - name: 检查处理结果
-      if: always()
-      run: |
-        echo "=== Output 目录内容 ==="
-        ls -la Output/
-        echo "=== 输出文件列表 ==="
-        find Output -type f -name "*.xlsx" | head -20
-        echo "=== 进度文件内容 ==="
-        cat Output/.progress.json 2>/dev/null || echo "进度文件不存在"
-    
-    - name: 提交进度文件
+    - name: 提交进度文件和输出文件
       if: always()
       run: |
         git config --global user.name "github-actions[bot]"
         git config --global user.email "github-actions[bot]@users.noreply.github.com"
-        if [ -f "Output/.progress.json" ]; then
-          git add -f Output/.progress.json
-          git diff --staged --quiet || git commit -m "更新处理进度 [skip ci]"
-          git push
-        else
-          echo "进度文件不存在，跳过提交"
-        fi
+        # 强制添加进度文件和输出文件
+        git add -f Output/.progress.json
+        git add -f Output/*.xlsx
+        git diff --staged --quiet || git commit -m "更新处理进度和输出文件 [skip ci]"
+        git push
     
-    - name: 上传输出文件
+    - name: 上传输出文件到 Artifacts（备份）
       if: always()
       uses: actions/upload-artifact@v4
       with:
         name: output-files-${{ github.run_id }}
-        path: |
-          Output/*.xlsx
-          Output/.progress.json
+        path: Output/*.xlsx
         retention-days: 30
