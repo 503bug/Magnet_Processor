@@ -1,4 +1,3 @@
-# .github/workflows/magnet-processor.yml
 name: 磁力链接批量处理
 
 on:
@@ -13,12 +12,12 @@ jobs:
     
     steps:
     - name: Checkout 代码
-      uses: actions/checkout@v5
+      uses: actions/checkout@v4
       with:
         persist-credentials: true
     
     - name: 设置 Python
-      uses: actions/setup-python@v6
+      uses: actions/setup-python@v5
       with:
         python-version: '3.10'
         cache: 'pip'
@@ -37,12 +36,26 @@ jobs:
       run: |
         python magnet_processor.py
     
-    - name: 提交进度和输出
+    - name: 提交进度文件
       if: always()
       run: |
         git config --global user.name "github-actions[bot]"
         git config --global user.email "github-actions[bot]@users.noreply.github.com"
-        git add Output/.progress.json
-        git add Output/*.xlsx
-        git diff --staged --quiet || git commit -m "更新处理进度和输出 [skip ci]"
+        # 强制添加进度文件（即使被 .gitignore 忽略）
+        git add -f Output/.progress.json
+        git diff --staged --quiet || git commit -m "更新处理进度 [skip ci]"
         git push
+    
+    - name: 上传输出文件
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: output-files-${{ github.run_id }}
+        path: Output/*.xlsx
+        retention-days: 30
+    
+    - name: 清理输出文件（可选）
+      if: always()
+      run: |
+        # 清理输出文件，避免仓库体积过大
+        rm -f Output/*.xlsx
