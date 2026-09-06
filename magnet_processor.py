@@ -17,7 +17,7 @@ from pathlib import Path
 
 # ========== 用户可调配置（直接修改此处） ==========
 REQUEST_INTERVAL = 1            # API 请求间隔（秒）
-BATCH_SIZE = 5                 # 每批处理行数
+BATCH_SIZE = 50                 # 每批处理行数
 MAX_RETRIES = 5                 # 下载图片重试次数
 TIMEOUT = 20                    # 请求超时（秒）
 DEFAULT_COL_WIDTH = 80          # 截图列宽（字符数）
@@ -296,12 +296,13 @@ def get_headers_from_file(file_path):
 def save_batch_to_file(batch_data, headers, batch_num, output_dir, base_name):
     """
     保存批次数据为 Excel 文件，包含标题行
-    修复：数据从第2行开始写入（第1行是标题）
+    标题行在第1行，数据从第2行开始
     """
     output_filename = f"{batch_num:03d}_{base_name}.xlsx"
     output_path = output_dir / output_filename
     
     print(f"  保存批次 {batch_num} 到: {output_filename}")
+    print(f"  数据行数: {len(batch_data)}")
     
     workbook = xlsxwriter.Workbook(str(output_path))
     worksheet = workbook.add_worksheet()
@@ -309,14 +310,17 @@ def save_batch_to_file(batch_data, headers, batch_num, output_dir, base_name):
     # 设置列宽
     worksheet.set_column(0, 3, 20)  # 前4列
     
-    # ===== 写入标题行（第1行） =====
+    # ===== 写入标题行（第1行，索引0） =====
     for col_idx, header in enumerate(headers):
         worksheet.write(0, col_idx, header)
+        print(f"    标题 {col_idx}: {header}")
     
-    # ===== 写入数据行（从第2行开始） =====
+    # ===== 写入数据行（从第2行开始，索引1） =====
     for row_idx, row_data in enumerate(batch_data):
-        # row_idx 从0开始，对应Excel的第2行（因为第1行是标题）
-        excel_row = row_idx + 2  # 第2行开始写入数据
+        # row_idx 从0开始，数据从第2行（索引1）开始写入
+        excel_row = row_idx + 1  # 第2行开始（索引1）
+        
+        print(f"    数据行 {row_idx}: 写入到第 {excel_row + 1} 行")
         
         worksheet.write(excel_row, 0, row_data['magnet'])
         worksheet.write(excel_row, 1, row_data['name'])
