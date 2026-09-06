@@ -38,19 +38,23 @@ env/
 *~
 .DS_Store
 
-# 项目特定 - 不忽略 Input 目录下的文件
-# Input/*.xlsx  # 注释掉，允许提交输入文件
-# Input/*.xls   # 注释掉
-# Input/*.xlsm  # 注释掉
+# ===== 项目特定配置 =====
+
+# Input 目录（存放源文件，不提交）
+Input/
 !Input/.gitkeep
 
-# 输出文件 - 允许提交
-# Output/*.xlsx  # 注释掉，允许提交
-# Output/*.xls   # 注释掉
+# Output 目录 - 允许提交所有文件
+# 注意：不要忽略 Output 目录
+Output/
 !Output/.gitkeep
-!Output/.progress.json  # 允许提交进度文件
+!Output/*.xlsx
+!Output/*.xls
+!Output/*.xlsm
+!Output/.progress.json
 
 # 临时文件
 *.tmp
 *.temp
 *.log
+*.cache
