@@ -18,7 +18,7 @@ from pathlib import Path
 
 # ========== 用户可调配置（直接修改此处） ==========
 REQUEST_INTERVAL = 0.7          # API 请求间隔（秒）
-BATCH_SIZE = 2                 # 每批处理行数（修改为20）
+BATCH_SIZE = 20                 # 每批处理行数（修改为20）
 MAX_RETRIES = 5                 # 下载图片重试次数
 TIMEOUT = 20                    # 请求超时（秒）
 DEFAULT_COL_WIDTH = 80          # 截图列宽（字符数）
