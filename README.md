@@ -53,14 +53,7 @@ MAX_ROWS_PER_RUN = 999999       # 单次运行最大处理行数
 
 ## 使用方法
 
-### 1. 将仓库克隆或 Fork 到您的 GitHub 账号
-
-```bash
-git clone https://github.com/your-username/your-repo.git
-cd your-repo
-```
-
-### 2. 添加输入文件
+### 1. 添加输入文件
 
 将包含磁力链接的 Excel 文件放入 `Input` 目录。  
 **输入文件格式要求**：
@@ -76,23 +69,7 @@ cd your-repo
 | magnet:?xt=... | 任意 | 任意 | 任意 |
 | magnet:?xt=... | ... | ... | ... |
 
-### 3. 提交并推送
-
-```bash
-git add Input/
-git commit -m "添加待处理的磁力链接文件"
-git push
-```
-
-### 4. 自动触发
-
-推送后，GitHub Actions 会自动运行（若工作流配置为 `on: push` 或定时触发）。您可以手动触发工作流：
-
-- 进入仓库的 **Actions** 选项卡
-- 选择 **磁力链接批量处理** 工作流
-- 点击 **Run workflow** → **Run workflow**
-
-### 5. 查看输出
+### 2. 查看输出
 
 处理完成后，生成的批次文件（`Output/*.xlsx`）会自动提交到仓库，并作为 **Artifacts** 保留 30 天。您可以在 Actions 运行记录的 **Artifacts** 区域下载所有输出文件。
 
@@ -117,17 +94,6 @@ git push
 - **运行时长**：单个工作流最长运行 5 小时，若超过会强制终止。您可以在 `MAX_RUN_TIME` 和 `timeout-minutes` 中调整。
 - **输入文件变动**：若 `Input` 中的文件被修改（哈希变化），进度会重置，重新处理。
 - **并发处理**：工作流通过检查 `.progress.json` 的更新时间，避免多个实例同时运行（间隔小于 5 分钟则跳过）。
-
-## 依赖项
-
-项目使用以下 Python 库（在 `requirements.txt` 中指定）：
-
-- `requests` – API 调用
-- `openpyxl` – 读取 Excel
-- `xlsxwriter` – 写入 Excel（支持图片嵌入）
-- `Pillow` – 图片格式转换
-
-这些依赖会在 GitHub Actions 运行时自动安装。
 
 ## 许可证
 
