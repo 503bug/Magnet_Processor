@@ -1,9 +1,18 @@
+# .github/workflows/magnet-processor.yml
 name: 磁力链接批量处理
 
 on:
   schedule:
     - cron: '0 2 * * *'
   workflow_dispatch:
+  # 添加 push 触发，方便测试
+  push:
+    branches:
+      - main
+      - master
+    paths:
+      - 'Input/**'
+      - 'magnet_processor.py'
 
 jobs:
   process-magnets:
@@ -15,6 +24,17 @@ jobs:
       uses: actions/checkout@v4
       with:
         persist-credentials: true
+        # 确保拉取所有历史记录
+        fetch-depth: 0
+    
+    - name: 列出 Input 目录内容（调试）
+      run: |
+        echo "=== Input 目录内容 ==="
+        ls -la Input/ || echo "Input 目录不存在或为空"
+        echo "=== 文件列表 ==="
+        find Input -type f -name "*.xlsx" -o -name "*.xls" -o -name "*.xlsm" || echo "未找到 Excel 文件"
+        echo "=== 文件哈希值 ==="
+        find Input -type f -name "*.xlsx" -exec md5sum {} \; || echo "未找到 Excel 文件"
     
     - name: 设置 Python
       uses: actions/setup-python@v5
@@ -27,21 +47,27 @@ jobs:
         python -m pip install --upgrade pip
         pip install requests openpyxl xlsxwriter Pillow
     
-    - name: 创建目录
+    - name: 创建输出目录
       run: |
-        mkdir -p Input
         mkdir -p Output
     
     - name: 运行处理程序
       run: |
         python magnet_processor.py
     
+    - name: 列出 Output 目录内容（调试）
+      if: always()
+      run: |
+        echo "=== Output 目录内容 ==="
+        ls -la Output/ || echo "Output 目录不存在或为空"
+        echo "=== 输出文件列表 ==="
+        find Output -type f || echo "未找到输出文件"
+    
     - name: 提交进度文件
       if: always()
       run: |
         git config --global user.name "github-actions[bot]"
         git config --global user.email "github-actions[bot]@users.noreply.github.com"
-        # 强制添加进度文件（即使被 .gitignore 忽略）
         git add -f Output/.progress.json
         git diff --staged --quiet || git commit -m "更新处理进度 [skip ci]"
         git push
@@ -53,9 +79,3 @@ jobs:
         name: output-files-${{ github.run_id }}
         path: Output/*.xlsx
         retention-days: 30
-    
-    - name: 清理输出文件（可选）
-      if: always()
-      run: |
-        # 清理输出文件，避免仓库体积过大
-        rm -f Output/*.xlsx
