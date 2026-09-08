@@ -17,14 +17,14 @@ from datetime import datetime
 from pathlib import Path
 
 # ========== 用户可调配置（直接修改此处） ==========
-REQUEST_INTERVAL = 0.7          # API 请求间隔（秒）
+REQUEST_INTERVAL = 1.5          # API 请求间隔（秒）
 BATCH_SIZE = 50                 # 每批处理行数（修改为20）
 MAX_RETRIES = 5                 # 下载图片重试次数
 TIMEOUT = 20                    # 请求超时（秒）
 DEFAULT_COL_WIDTH = 80          # 截图列宽（字符数）
 DEFAULT_ROW_HEIGHT = 274        # 截图行高（磅）
 JPEG_QUALITY = 85               # JPEG 压缩质量
-MAX_RUN_TIME = 300              # 单次最大运行时间（分钟）
+MAX_RUN_TIME = 330              # 单次最大运行时间（分钟）
 MAX_ROWS_PER_RUN = 999999       # 单次运行最大处理行数
 # ===================================================
 
