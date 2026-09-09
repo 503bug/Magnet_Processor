@@ -6,6 +6,12 @@ on:
     - cron: '*/6 * * * *'  # 每6分钟触发一次
   workflow_dispatch:
 
+# ========== 新增：强制串行执行 ==========
+concurrency:
+  group: magnet-processor-group
+  cancel-in-progress: false   # 新运行排队等待，不取消正在运行的旧任务
+# =======================================
+
 jobs:
   process-magnets:
     runs-on: ubuntu-latest
@@ -41,7 +47,7 @@ jobs:
             exit 0
           fi
           
-          # 检查上次运行时间，避免冲突
+          # 检查上次运行时间，避免冲突（此层保护仍然保留，但 concurrency 已提供更强保障）
           LAST_RUN=$(jq -r '._updated_at' Output/.progress.json 2>/dev/null)
           if [ -n "$LAST_RUN" ]; then
             LAST_RUN_EPOCH=$(date -d "$LAST_RUN" +%s 2>/dev/null || echo 0)
