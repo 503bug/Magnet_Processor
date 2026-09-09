@@ -1,120 +1,122 @@
-# .github/workflows/magnet-processor.yml
-name: 磁力链接批量处理
+name: 磁力链接批量处理（每6分钟触发）
 
 on:
   schedule:
-    - cron: '*/6 * * * *'  # 每6分钟触发一次
-  workflow_dispatch:
+    - cron: '*/6 * * * *'   # 每6分钟触发一次，这是GitHub允许的最小间隔
+  workflow_dispatch:        # 同时支持手动触发
+
+# 保证同一时刻只有一个运行实例（新的触发会排队等待旧的完成）
+concurrency:
+  group: magnet-processor
+  cancel-in-progress: false
 
 jobs:
-  process-magnets:
+  # 1. 生成待处理文件矩阵（只扫描未完成的文件）
+  generate-matrix:
     runs-on: ubuntu-latest
-    timeout-minutes: 360    # 6小时（GitHub Actions 上限）
-    
+    outputs:
+      files: ${{ steps.set-matrix.outputs.files }}
     steps:
-    - name: Checkout 代码
-      uses: actions/checkout@v4
-      with:
-        persist-credentials: true
-        fetch-depth: 0
-    
-    - name: 检查是否应该运行
-      id: check_run
-      run: |
-        # 检查是否有输入文件
-        if [ ! -d "Input" ] || [ -z "$(ls -A Input/*.xlsx 2>/dev/null)" ]; then
-          echo "没有输入文件，跳过运行"
-          echo "should_run=false" >> $GITHUB_OUTPUT
-          exit 0
-        fi
-        
-        # 检查进度文件，判断是否所有文件都已处理完成
-        if [ -f "Output/.progress.json" ]; then
-          # 检查是否所有文件都标记为已完成
-          COMPLETED=$(jq -r '.[] | select(.completed == true) | .completed' Output/.progress.json 2>/dev/null | wc -l)
-          TOTAL=$(jq -r 'keys | length' Output/.progress.json 2>/dev/null | wc -l)
-          TOTAL=$((TOTAL - 1))
-          
-          if [ "$COMPLETED" -eq "$TOTAL" ] && [ "$TOTAL" -gt 0 ]; then
-            echo "所有文件已处理完成，跳过运行"
-            echo "should_run=false" >> $GITHUB_OUTPUT
-            exit 0
+      - name: Checkout 代码
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+          fetch-depth: 0
+
+      - name: 生成文件列表
+        id: set-matrix
+        run: |
+          mkdir -p Input Output
+          MATRIX_JSON=$(python3 - << 'EOF'
+          import json, os, glob
+          from pathlib import Path
+
+          input_dir = Path("Input")
+          output_dir = Path("Output")
+          files = []
+
+          for ext in ['*.xlsx', '*.xlsm', '*.xls']:
+              for f in glob.glob(str(input_dir / ext)):
+                  file_path = Path(f)
+                  progress_file = output_dir / f".progress_{file_path.stem}.json"
+                  completed = False
+                  if progress_file.exists():
+                      try:
+                          import json as json_mod
+                          with open(progress_file, 'r') as pf:
+                              state = json_mod.load(pf)
+                              completed = state.get('completed', False)
+                      except:
+                          pass
+                  if not completed:
+                      files.append(str(file_path))
+
+          print(json.dumps(files))
+          EOF
+          )
+          echo "files=${MATRIX_JSON}" >> $GITHUB_OUTPUT
+
+  # 2. 并发处理每个未完成的文件（每个文件一个独立作业）
+  process-file:
+    needs: generate-matrix
+    runs-on: ubuntu-latest
+    timeout-minutes: 360   # 单文件最长6小时
+    strategy:
+      fail-fast: false      # 一个文件失败不影响其他
+      matrix:
+        file: ${{ fromJSON(needs.generate-matrix.outputs.files) }}
+    # 如果没有文件，跳过此作业（避免无意义运行）
+    if: ${{ needs.generate-matrix.outputs.files != '[]' && needs.generate-matrix.outputs.files != '' }}
+    steps:
+      - name: Checkout 代码
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+          fetch-depth: 0
+
+      - name: 设置 Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.10'
+          cache: 'pip'
+
+      - name: 安装依赖
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests openpyxl xlsxwriter Pillow
+
+      - name: 创建目录
+        run: mkdir -p Input Output
+
+      - name: 处理指定文件
+        run: python magnet_processor.py --input-file "${{ matrix.file }}"
+        env:
+          MAX_RUN_TIME: 350          # 单次运行350分钟（略低于作业超时）
+          MAX_ROWS_PER_RUN: 999999   # 每轮尽量处理全部行
+
+      - name: 提交该文件产生的输出
+        if: always()
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+          INPUT_BASE=$(basename "${{ matrix.file }}" .xlsx)
+          git add -f "Output/.progress_${INPUT_BASE}.json" || true
+          git add -f "Output/*_${INPUT_BASE}.xlsx" || true
+
+          if ! git diff --staged --quiet; then
+            for i in {1..5}; do
+              git commit -m "处理文件 ${INPUT_BASE} [skip ci]" --no-edit && \
+              git pull --rebase && \
+              git push && break || sleep 2
+            done
           fi
-          
-          # 检查上次运行时间，避免冲突
-          LAST_RUN=$(jq -r '._updated_at' Output/.progress.json 2>/dev/null)
-          if [ -n "$LAST_RUN" ]; then
-            LAST_RUN_EPOCH=$(date -d "$LAST_RUN" +%s 2>/dev/null || echo 0)
-            CURRENT_EPOCH=$(date +%s)
-            DIFF=$((CURRENT_EPOCH - LAST_RUN_EPOCH))
-            
-            # 如果距离上次运行少于5分钟，跳过（避免并发）
-            if [ $DIFF -lt 300 ]; then
-              echo "距离上次运行不到5分钟，跳过"
-              echo "should_run=false" >> $GITHUB_OUTPUT
-              exit 0
-            fi
-          fi
-        fi
-        
-        echo "should_run=true" >> $GITHUB_OUTPUT
-    
-    - name: 设置 Python
-      if: steps.check_run.outputs.should_run == 'true'
-      uses: actions/setup-python@v6
-      with:
-        python-version: '3.10'
-        cache: 'pip'
-    
-    - name: 安装依赖
-      if: steps.check_run.outputs.should_run == 'true'
-      run: |
-        python -m pip install --upgrade pip
-        pip install requests openpyxl xlsxwriter Pillow jq
-    
-    - name: 创建目录
-      if: steps.check_run.outputs.should_run == 'true'
-      run: |
-        mkdir -p Input
-        mkdir -p Output
-    
-    - name: 运行处理程序
-      if: steps.check_run.outputs.should_run == 'true'
-      run: |
-        # 使用 timeout 命令在6小时后强制终止
-        timeout 6h python magnet_processor.py || {
-          EXIT_CODE=$?
-          if [ $EXIT_CODE -eq 124 ]; then
-            echo "运行超时（6小时），正常停止"
-          else
-            echo "程序异常退出，退出码: $EXIT_CODE"
-            exit $EXIT_CODE
-          fi
-        }
-      env:
-        MAX_RUN_TIME: 350        # 与脚本内部一致（分钟）
-        MAX_ROWS_PER_RUN: 999999
-    
-    - name: 最终提交所有文件
-      if: always() && steps.check_run.outputs.should_run == 'true'
-      run: |
-        git config --global user.name "github-actions[bot]"
-        git config --global user.email "github-actions[bot]@users.noreply.github.com"
-        
-        # 添加所有输出文件
-        git add -f Output/.progress.json || true
-        git add -f Output/*.xlsx || true
-        
-        git diff --staged --quiet || {
-          git commit -m "最终提交所有输出文件 [skip ci]"
-          git push
-        }
-    
-    - name: 上传输出文件到 Artifacts
-      if: always() && steps.check_run.outputs.should_run == 'true'
-      uses: actions/upload-artifact@v5
-      with:
-        name: output-files-${{ github.run_id }}
-        path: Output/*.xlsx
-        retention-days: 30
-        if-no-files-found: warn
+
+      - name: 上传该文件的批次文件到 Artifacts（可选）
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: output-${{ matrix.file }}-${{ github.run_id }}
+          path: Output/*_${{ matrix.file }}.xlsx
+          retention-days: 30
+          if-no-files-found: warn
