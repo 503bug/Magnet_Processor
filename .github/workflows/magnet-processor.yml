@@ -82,7 +82,7 @@ jobs:
         mkdir -p Input
         mkdir -p Output
 
-    - name: 运行处理程序（多进程并行 + 全局 API 限速 + 阶段性保存）
+    - name: 运行处理程序（跨行多进程 + 行内多线程 + 全局限速 + 阶段性保存）
       if: steps.check_run.outputs.should_run == 'true'
       run: |
         timeout 6h python magnet_processor.py || {
@@ -95,9 +95,10 @@ jobs:
           fi
         }
       env:
-        MAX_RUN_TIME: 350        # 与脚本内部一致（分钟）
-        MAX_WORKERS: 4           # 并行进程数（GitHub Actions 4 核）
-        API_RATE_LIMIT: 5        # 严格遵守 whatslink.info 官方限制：5次/分钟
+        MAX_RUN_TIME: 350            # 与脚本内部一致（分钟）
+        MAX_WORKERS: 4               # 跨行并行进程数（GitHub Actions 4 核）
+        SCREENSHOT_THREADS: 6        # 行内截图并行线程数（I/O 密集，可适当提高）
+        API_RATE_LIMIT: 5            # 严格遵守 whatslink.info 官方限制：5次/分钟
 
     - name: 最终提交所有文件
       if: always() && steps.check_run.outputs.should_run == 'true'
