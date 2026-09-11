@@ -1,10 +1,10 @@
 {
   "Input/File_002.xlsx": {
-    "processed_rows": 40,
+    "processed_rows": 45,
     "total_rows": 1000,
     "file_hash": "12b3f568e3d8c796293621eed9e04fd4",
     "completed": false,
-    "last_modified": "2026-09-11T07:59:19.033070",
+    "last_modified": "2026-09-11T08:00:08.761705",
     "batches_created": [
       1,
       2,
@@ -13,7 +13,8 @@
       5,
       6,
       7,
-      8
+      8,
+      9
     ]
   },
   "Input/File_003.xlsx": {
@@ -40,5 +41,5 @@
     "last_modified": "",
     "batches_created": []
   },
-  "_updated_at": "2026-09-11T07:59:19.033077"
+  "_updated_at": "2026-09-11T08:00:08.761714"
 }
