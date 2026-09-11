@@ -15,12 +15,12 @@ import hashlib
 import subprocess
 import fcntl
 import threading
-from concurrent.futures import ProcessPoolExecutor, as_completed
+from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed
 from datetime import datetime
 from pathlib import Path
 
 # ========== 用户可调配置 ==========
-BATCH_SIZE = 5                 # 每批处理行数（处理满 50 行立即保存一个 Excel 文件）
+BATCH_SIZE = 50                 # 每批处理行数（处理满 50 行立即保存一个 Excel 文件）
 MAX_RETRIES = 5                 # 下载图片重试次数
 TIMEOUT = 20                    # 请求超时（秒）
 DEFAULT_COL_WIDTH = 80          # 截图列宽（字符数）
@@ -29,10 +29,11 @@ JPEG_QUALITY = 85               # JPEG 压缩质量
 MAX_RUN_TIME = 330              # 单次最大运行时间（分钟）
 
 # ========== 并行 & 限速配置 ==========
-MAX_WORKERS = int(os.environ.get('MAX_WORKERS', 4))          # 并行进程数
-API_RATE_LIMIT = int(os.environ.get('API_RATE_LIMIT', 5))    # 每分钟最大 API 请求数（官方限制 5）
-API_RATE_WINDOW = 60                                          # 限速时间窗口（秒）
-# ==================================
+MAX_WORKERS = int(os.environ.get('MAX_WORKERS', 4))                     # 跨行进程数
+SCREENSHOT_THREADS = int(os.environ.get('SCREENSHOT_THREADS', 6))       # 行内截图并行线程数
+API_RATE_LIMIT = int(os.environ.get('API_RATE_LIMIT', 5))               # 每分钟最大 API 请求数（官方限制 5）
+API_RATE_WINDOW = 60                                                     # 限速时间窗口（秒）
+# ======================================
 
 # 尝试导入 PIL
 try:
@@ -205,6 +206,32 @@ def download_and_convert_to_jpeg(url, quality=JPEG_QUALITY, max_retries=MAX_RETR
     return None
 
 
+def download_screenshots_parallel(urls, max_threads=None):
+    """
+    并行下载一行内的所有截图（线程池）。
+    由于 requests 是 I/O 密集型，等待网络时会释放 GIL，
+    因此线程池在此场景几乎达到进程级性能，且无序列化开销。
+    返回成功下载的临时文件路径列表。
+    """
+    if not urls:
+        return []
+
+    if max_threads is None:
+        max_threads = SCREENSHOT_THREADS
+
+    tmp_files = []
+    with ThreadPoolExecutor(max_workers=max_threads) as tpe:
+        future_to_url = {tpe.submit(download_and_convert_to_jpeg, u): u for u in urls}
+        for future in as_completed(future_to_url):
+            try:
+                path = future.result()
+                if path:
+                    tmp_files.append(path)
+            except Exception as e:
+                print(f"    截图下载异常: {e}")
+    return tmp_files
+
+
 def get_file_hash(file_path):
     """获取文件的 MD5 哈希值"""
     hasher = hashlib.md5()
@@ -269,7 +296,7 @@ def _process_row_worker(args):
     """
     单个进程处理一行磁力链接：
       1. 调用 API 获取信息（通过全局限速器保证 <= 5 次/分钟）
-      2. 下载并转换所有截图
+      2. 行内并行下载并转换所有截图（线程池）
       3. 返回结果字典
     """
     magnet, row_num = args
@@ -298,12 +325,12 @@ def _process_row_worker(args):
     result['size'] = info["size"]
     result['screenshots'] = info["screenshots"]
 
-    for s in info.get("screenshots", []):
-        img_url = s.get("screenshot")
-        if img_url:
-            tmp_path = download_and_convert_to_jpeg(img_url)
-            if tmp_path:
-                result['temp_files'].append(tmp_path)
+    # 收集截图 URL，行内并行下载（6 线程）
+    screenshot_urls = [
+        s.get("screenshot") for s in info.get("screenshots", [])
+        if s.get("screenshot")
+    ]
+    result['temp_files'] = download_screenshots_parallel(screenshot_urls)
 
     return result
 
@@ -513,7 +540,7 @@ def save_batch_to_file(batch_data, headers, batch_num, output_dir, base_name):
 
 
 # ============================================================
-# 单文件处理（多进程并行 + 阶段性保存）
+# 单文件处理（跨行多进程 + 行内多线程 + 阶段性保存）
 # ============================================================
 def process_single_file(file_path, output_dir, progress_manager,
                         file_index=None, total_files=None):
@@ -521,6 +548,7 @@ def process_single_file(file_path, output_dir, progress_manager,
     处理单个 Excel 文件：
       - 每处理 BATCH_SIZE（50）行，立即保存为一个独立 Excel 文件到 Output
       - 立即更新进度并提交到 Git（阶段性保存，不等到全部完成）
+      - 跨行用 ProcessPoolExecutor 并行，行内截图用 ThreadPoolExecutor 并行
     返回: (processed_rows, should_continue)
     """
     file_label = f"[{file_index}/{total_files}] " if file_index and total_files else ""
@@ -569,7 +597,8 @@ def process_single_file(file_path, output_dir, progress_manager,
 
         print(f"  本次计划处理: {len(rows_to_process)} 行数据")
         print(f"  每 {BATCH_SIZE} 行保存一个 Excel 文件")
-        print(f"  并行进程数: {MAX_WORKERS}，API 限速: {API_RATE_LIMIT} 次/分钟")
+        print(f"  跨行并行进程数: {MAX_WORKERS}，行内截图并行线程数: {SCREENSHOT_THREADS}")
+        print(f"  API 限速: {API_RATE_LIMIT} 次/分钟")
 
         start_time = time.time()
         processed_count = 0
@@ -577,7 +606,7 @@ def process_single_file(file_path, output_dir, progress_manager,
         file_base = file_path.stem
         hit_limit = False
 
-        # 使用进程池并行处理
+        # 使用进程池并行处理（跨行）
         with ProcessPoolExecutor(max_workers=MAX_WORKERS) as executor:
             for batch_start in range(0, len(rows_to_process), BATCH_SIZE):
                 # 时间检查
@@ -669,14 +698,16 @@ def process_single_file(file_path, output_dir, progress_manager,
 # ============================================================
 def main():
     print("=" * 60)
-    print("磁力链接批量处理器 - GitHub Actions 版本（多进程并行）")
+    print("磁力链接批量处理器 - GitHub Actions 版本")
+    print("  跨行多进程 + 行内多线程 + 全局限速 + 阶段性保存")
     print("=" * 60)
     print(f"运行时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     print()
 
     print("当前配置:")
     print(f"  BATCH_SIZE: {BATCH_SIZE} 行/批次（每批保存一个 Excel 文件）")
-    print(f"  MAX_WORKERS: {MAX_WORKERS} 并行进程")
+    print(f"  MAX_WORKERS: {MAX_WORKERS} 跨行并行进程")
+    print(f"  SCREENSHOT_THREADS: {SCREENSHOT_THREADS} 行内截图并行线程")
     print(f"  API_RATE_LIMIT: {API_RATE_LIMIT} 次/分钟（官方限制）")
     print(f"  MAX_RUN_TIME: {MAX_RUN_TIME} 分钟")
     print(f"  MAX_RETRIES: {MAX_RETRIES} 次")
