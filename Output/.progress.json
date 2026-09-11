@@ -68,11 +68,11 @@
     ]
   },
   "Input/File_001.xlsx": {
-    "processed_rows": 800,
+    "processed_rows": 850,
     "total_rows": 1000,
     "file_hash": "1636e64353583c71bbc66c4465387738",
     "completed": false,
-    "last_modified": "2026-09-11T22:54:05.014876",
+    "last_modified": "2026-09-11T23:04:06.294743",
     "batches_created": [
       1,
       2,
@@ -89,8 +89,9 @@
       13,
       14,
       15,
-      16
+      16,
+      17
     ]
   },
-  "_updated_at": "2026-09-11T22:54:05.014887"
+  "_updated_at": "2026-09-11T23:04:06.294754"
 }
