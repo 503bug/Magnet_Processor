@@ -1,10 +1,10 @@
 {
   "Input/51.2TB.xlsx": {
-    "processed_rows": 1208,
+    "processed_rows": 1258,
     "total_rows": 6600,
     "file_hash": "d8330362c516c8a732a262b1f2ff659a",
     "completed": false,
-    "last_modified": "2026-09-11T06:55:08.301707",
+    "last_modified": "2026-09-11T07:02:23.435062",
     "batches_created": [
       1,
       2,
@@ -29,8 +29,9 @@
       21,
       22,
       23,
-      24
+      24,
+      25
     ]
   },
-  "_updated_at": "2026-09-11T06:55:08.301718"
+  "_updated_at": "2026-09-11T07:02:23.435072"
 }
