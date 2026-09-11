@@ -20,7 +20,7 @@ from datetime import datetime
 from pathlib import Path
 
 # ========== 用户可调配置 ==========
-BATCH_SIZE = 50                 # 每批处理行数（处理满 50 行立即保存一个 Excel 文件）
+BATCH_SIZE = 5                 # 每批处理行数（处理满 50 行立即保存一个 Excel 文件）
 MAX_RETRIES = 5                 # 下载图片重试次数
 TIMEOUT = 20                    # 请求超时（秒）
 DEFAULT_COL_WIDTH = 80          # 截图列宽（字符数）
