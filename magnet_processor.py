@@ -443,19 +443,26 @@ def get_excel_files(input_dir):
 
 def _natural_sort_key(path: Path):
     """
-    按文件名中的数字做自然排序，例如：
-      1_xxx.xlsx < 2_xxx.xlsx < 10_xxx.xlsx
-    避免普通字符串排序把 '10' 排到 '2' 前面。
+    按文件名做自然数字排序：
+      File_000.xlsx < File_001.xlsx < File_009.xlsx < File_010.xlsx < File_100.xlsx
+    也兼容 1_xxx / 2_xxx / 10_xxx 等命名。
+
+    返回类型统一的元组列表，避免 str 与 int 直接比较时的 TypeError：
+      (0, "前缀字符串")  ← 字符串片段
+      (1, 数字)          ← 数字片段
     """
     name = path.stem
-    return [int(c) if c.isdigit() else c.lower()
-            for c in re.split(r'(\d+)', name)]
+    parts = re.split(r'(\d+)', name)
+    return [
+        (1, int(p)) if p.isdigit() else (0, p.lower())
+        for p in parts
+    ]
 
 
 def get_unprocessed_files(input_dir, progress_manager):
     """
     返回所有未完成处理的文件，并**按文件名自然数字序**排序，
-    保证每次运行都从最小号文件开始处理。
+    保证每次运行都从最小号文件（File_000.xlsx）开始处理。
     """
     all_files = get_excel_files(input_dir)
     unprocessed = []
@@ -473,8 +480,15 @@ def get_unprocessed_files(input_dir, progress_manager):
         state['file_hash'] = file_hash
         unprocessed.append(file_path)
 
-    # ✅ 关键修复：按文件名自然数字序排序（最小号在前）
+    # ✅ 关键修复：按文件名自然数字序排序（File_000 → File_001 → File_002 → …）
     unprocessed.sort(key=_natural_sort_key)
+
+    # 🔍 打印排序后的顺序，方便一眼确认
+    if unprocessed:
+        print("  📑 待处理文件顺序:")
+        for i, f in enumerate(unprocessed, 1):
+            print(f"     {i}. {f.name}")
+
     return unprocessed
 
 
@@ -745,7 +759,7 @@ def main():
         print("所有文件已处理完成！")
         return
 
-    print(f"找到 {len(unprocessed_files)} 个未处理的文件（按文件名自然序）:")
+    print(f"\n找到 {len(unprocessed_files)} 个未处理的文件（按文件名自然序）:")
     for f in unprocessed_files:
         processed = progress_manager.get_processed_rows(f)
         total = count_data_rows_in_file(f)
