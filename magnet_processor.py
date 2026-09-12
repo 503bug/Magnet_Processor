@@ -15,6 +15,7 @@ import hashlib
 import subprocess
 import fcntl
 import threading
+import re
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed
 from datetime import datetime
 from pathlib import Path
@@ -440,7 +441,22 @@ def get_excel_files(input_dir):
     return [Path(f) for f in excel_files]
 
 
+def _natural_sort_key(path: Path):
+    """
+    按文件名中的数字做自然排序，例如：
+      1_xxx.xlsx < 2_xxx.xlsx < 10_xxx.xlsx
+    避免普通字符串排序把 '10' 排到 '2' 前面。
+    """
+    name = path.stem
+    return [int(c) if c.isdigit() else c.lower()
+            for c in re.split(r'(\d+)', name)]
+
+
 def get_unprocessed_files(input_dir, progress_manager):
+    """
+    返回所有未完成处理的文件，并**按文件名自然数字序**排序，
+    保证每次运行都从最小号文件开始处理。
+    """
     all_files = get_excel_files(input_dir)
     unprocessed = []
     for file_path in all_files:
@@ -457,7 +473,8 @@ def get_unprocessed_files(input_dir, progress_manager):
         state['file_hash'] = file_hash
         unprocessed.append(file_path)
 
-    unprocessed.sort(key=lambda f: progress_manager.get_processed_rows(f))
+    # ✅ 关键修复：按文件名自然数字序排序（最小号在前）
+    unprocessed.sort(key=_natural_sort_key)
     return unprocessed
 
 
@@ -728,7 +745,7 @@ def main():
         print("所有文件已处理完成！")
         return
 
-    print(f"找到 {len(unprocessed_files)} 个未处理的文件:")
+    print(f"找到 {len(unprocessed_files)} 个未处理的文件（按文件名自然序）:")
     for f in unprocessed_files:
         processed = progress_manager.get_processed_rows(f)
         total = count_data_rows_in_file(f)
