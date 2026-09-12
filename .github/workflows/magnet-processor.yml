@@ -98,7 +98,7 @@ jobs:
         MAX_RUN_TIME: 350            # 与脚本内部一致（分钟）
         MAX_WORKERS: 4               # 跨行并行进程数（GitHub Actions 4 核）
         SCREENSHOT_THREADS: 6        # 行内截图并行线程数（I/O 密集，可适当提高）
-        API_RATE_LIMIT: 5            # 严格遵守 whatslink.info 官方限制：5次/分钟
+        API_RATE_LIMIT: 4            # 官方限制 5，实际用 4 留冗余（GitHub Actions 是共享 IP）
 
     - name: 最终提交所有文件
       if: always() && steps.check_run.outputs.should_run == 'true'
