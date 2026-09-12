@@ -3,8 +3,8 @@
     "processed_rows": 1496,
     "total_rows": 1496,
     "file_hash": "6466ee7a1e5cf3f688a64713e392ab41",
-    "completed": false,
-    "last_modified": "2026-09-12T07:33:48.966750",
+    "completed": true,
+    "last_modified": "2026-09-12T07:33:49.920435",
     "batches_created": [
       1,
       2,
@@ -38,5 +38,5 @@
       30
     ]
   },
-  "_updated_at": "2026-09-12T07:33:48.966760"
+  "_updated_at": "2026-09-12T07:33:49.920446"
 }
