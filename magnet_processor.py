@@ -22,7 +22,8 @@ from pathlib import Path
 
 # ========== 用户可调配置 ==========
 BATCH_SIZE = 50                 # 每批处理行数（处理满 50 行立即保存一个 Excel 文件）
-MAX_RETRIES = 5                 # 下载图片重试次数
+MAX_RETRIES = 5                 # 图片下载重试次数
+API_MAX_RETRIES = 8             # API 请求重试次数（比图片更多，因为 429 是常态）
 TIMEOUT = 20                    # 请求超时（秒）
 DEFAULT_COL_WIDTH = 80          # 截图列宽（字符数）
 DEFAULT_ROW_HEIGHT = 274        # 截图行高（磅）
@@ -32,8 +33,15 @@ MAX_RUN_TIME = 330              # 单次最大运行时间（分钟）
 # ========== 并行 & 限速配置 ==========
 MAX_WORKERS = int(os.environ.get('MAX_WORKERS', 4))                     # 跨行进程数
 SCREENSHOT_THREADS = int(os.environ.get('SCREENSHOT_THREADS', 6))       # 行内截图并行线程数
-API_RATE_LIMIT = int(os.environ.get('API_RATE_LIMIT', 5))               # 每分钟最大 API 请求数（官方限制 5）
+API_RATE_LIMIT = int(os.environ.get('API_RATE_LIMIT', 4))               # 每分钟最大 API 请求数（官方 5，留冗余用 4）
 API_RATE_WINDOW = 60                                                     # 限速时间窗口（秒）
+
+# ========== 退避策略 ==========
+API_BACKOFF_429_BASE = 15       # 429 基础退避秒数（指数：15, 30, 60, 120, 120...）
+API_BACKOFF_429_MAX = 120       # 429 最大退避秒数
+API_BACKOFF_5XX_BASE = 5        # 5xx 基础退避秒数（线性：5, 10, 15, 20...）
+API_REQUEST_DELAY = 0.3         # 每次 API 请求前的固定小延迟（秒），缓解突发
+IMAGE_BACKOFF_429_BASE = 10     # 图片 429 基础退避秒数（线性增长）
 # ======================================
 
 # 尝试导入 PIL
@@ -143,67 +151,175 @@ def format_size(size_bytes):
 
 
 def get_magnet_info(magnet_link):
-    """调用 whatslink.info API 获取磁力信息（遵守官方 5次/分钟 限制）"""
-    get_rate_limiter().acquire()  # 阻塞等待令牌，确保不超限
+    """
+    调用 whatslink.info API 获取磁力信息。
 
+    修复要点：
+      1. screenshots 可能是 JSON null → 用 `or []` 兜底，避免 'NoneType' not iterable
+      2. 429 用指数退避（15/30/60/120...），最大 120s
+      3. 5xx 用线性退避（5/10/15/20...）
+      4. 4xx（非 429）不重试，直接返回 None
+      5. 每次尝试前都走全局限速器 + 固定小延迟
+    """
     url = "https://whatslink.info/api/v1/link"
     params = {"url": magnet_link}
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
                       "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36"
     }
-    try:
-        resp = requests.get(url, params=params, headers=headers, timeout=TIMEOUT)
-        resp.raise_for_status()
-        data = resp.json()
 
-        if data.get("error"):
-            print(f"    API返回错误: {data['error']}")
-            return None
+    last_error = None
+    for attempt in range(API_MAX_RETRIES):
+        # 每次尝试前都走全局限速器（跨进程 4/min）
+        get_rate_limiter().acquire()
 
-        name = data.get("name", "").strip()
-        count = data.get("count", 0)
-        size_bytes = data.get("size", 0)
-        size_str = format_size(size_bytes)
+        # 额外固定小延迟，避免多进程瞬时打爆服务器
+        if API_REQUEST_DELAY > 0:
+            time.sleep(API_REQUEST_DELAY)
 
-        screenshots = []
-        for item in data.get("screenshots", []):
-            if isinstance(item, dict) and item.get("screenshot"):
-                screenshots.append({
-                    "time": item.get("time", 0),
-                    "screenshot": item.get("screenshot", "")
-                })
+        try:
+            resp = requests.get(url, params=params, headers=headers, timeout=TIMEOUT)
 
-        return {
-            "name": name,
-            "count": count,
-            "size": size_str,
-            "screenshots": screenshots
-        }
-    except Exception as e:
-        print(f"    API请求失败: {e}")
-        return None
+            # --- 429：指数退避 ---
+            if resp.status_code == 429:
+                wait = min(API_BACKOFF_429_BASE * (2 ** attempt), API_BACKOFF_429_MAX)
+                print(f"    ⏸ API 429 限速，等待 {wait}s 后重试 ({attempt + 1}/{API_MAX_RETRIES})")
+                time.sleep(wait)
+                last_error = "HTTP 429"
+                continue
+
+            # --- 5xx：线性退避 ---
+            if resp.status_code >= 500:
+                wait = API_BACKOFF_5XX_BASE * (attempt + 1)
+                print(f"    ⏸ API {resp.status_code} 服务端错误，等待 {wait}s 后重试 "
+                      f"({attempt + 1}/{API_MAX_RETRIES})")
+                time.sleep(wait)
+                last_error = f"HTTP {resp.status_code}"
+                continue
+
+            # --- 其它 4xx（如 400/404）：不重试 ---
+            if resp.status_code >= 400:
+                print(f"    ❌ API HTTP {resp.status_code}（不可重试）: {resp.text[:150]}")
+                return None
+
+            data = resp.json()
+
+            if data.get("error"):
+                print(f"    API返回错误: {data['error']}")
+                return None
+
+            name = (data.get("name") or "").strip()
+            count = data.get("count") or 0
+            size_bytes = data.get("size") or 0
+            size_str = format_size(size_bytes)
+
+            # ✅ 关键修复：screenshots 可能是 JSON null
+            #    原代码 `data.get("screenshots", [])` 只对"缺失 key"生效，
+            #    对 `"screenshots": null` 会返回 None → for 循环抛 TypeError
+            raw_screenshots = data.get("screenshots") or []
+            screenshots = []
+            for item in raw_screenshots:
+                if isinstance(item, dict) and item.get("screenshot"):
+                    screenshots.append({
+                        "time": item.get("time", 0),
+                        "screenshot": item.get("screenshot", "")
+                    })
+
+            return {
+                "name": name,
+                "count": count,
+                "size": size_str,
+                "screenshots": screenshots
+            }
+
+        except requests.exceptions.Timeout:
+            last_error = "timeout"
+            print(f"    ⏱ API 超时 ({attempt + 1}/{API_MAX_RETRIES})")
+            if attempt < API_MAX_RETRIES - 1:
+                time.sleep(5)
+
+        except requests.exceptions.ConnectionError as e:
+            last_error = "connection error"
+            print(f"    ⚠️ API 连接错误 ({attempt + 1}/{API_MAX_RETRIES}): {e}")
+            if attempt < API_MAX_RETRIES - 1:
+                time.sleep(5)
+
+        except Exception as e:
+            last_error = str(e)
+            print(f"    ⚠️ API 请求异常 ({attempt + 1}/{API_MAX_RETRIES}): {e}")
+            if attempt < API_MAX_RETRIES - 1:
+                time.sleep(5)
+
+    print(f"    ❌ API 最终失败（已重试 {API_MAX_RETRIES} 次）: {last_error}")
+    return None
 
 
 def download_and_convert_to_jpeg(url, quality=JPEG_QUALITY, max_retries=MAX_RETRIES, timeout=TIMEOUT):
-    """下载图片并转换为 JPEG，返回临时文件路径"""
+    """
+    下载图片并转换为 JPEG，返回临时文件路径。
+
+    修复要点：
+      1. 429 线性退避（10/20/30...）
+      2. 5xx 线性退避（3/6/9...）
+      3. 4xx（非 429，如 404）不重试
+      4. 最终失败打印一次明确错误
+    """
+    last_error = None
     for attempt in range(max_retries):
         try:
             resp = requests.get(url, timeout=timeout)
-            resp.raise_for_status()
+
+            # --- 429：线性退避 ---
+            if resp.status_code == 429:
+                wait = IMAGE_BACKOFF_429_BASE * (attempt + 1)
+                print(f"    ⏸ 图片 429 限速，等待 {wait}s ({attempt + 1}/{max_retries})")
+                time.sleep(wait)
+                last_error = "HTTP 429"
+                continue
+
+            # --- 5xx：线性退避 ---
+            if resp.status_code >= 500:
+                wait = 3 * (attempt + 1)
+                print(f"    ⏸ 图片 {resp.status_code} 服务端错误，等待 {wait}s "
+                      f"({attempt + 1}/{max_retries})")
+                time.sleep(wait)
+                last_error = f"HTTP {resp.status_code}"
+                continue
+
+            # --- 其它 4xx：不重试 ---
+            if resp.status_code >= 400:
+                print(f"    ❌ 图片 HTTP {resp.status_code}（不可重试），跳过")
+                return None
+
             img = PILImage.open(io.BytesIO(resp.content))
             if img.mode == 'RGBA':
                 img = img.convert('RGB')
             fd, tmp_path = tempfile.mkstemp(suffix='.jpg')
             os.close(fd)
-            img.save(tmp_path, format='JPEG', quality=quality)
+            try:
+                img.save(tmp_path, format='JPEG', quality=quality)
+            except Exception:
+                try:
+                    os.unlink(tmp_path)
+                except Exception:
+                    pass
+                raise
             return tmp_path
-        except Exception as e:
-            print(f"    下载/转换图片失败 (尝试 {attempt + 1}/{max_retries}): {e}")
+
+        except requests.exceptions.Timeout:
+            last_error = "timeout"
             if attempt < max_retries - 1:
                 time.sleep(2)
-            else:
-                return None
+        except requests.exceptions.ConnectionError:
+            last_error = "connection error"
+            if attempt < max_retries - 1:
+                time.sleep(2)
+        except Exception as e:
+            last_error = str(e)
+            if attempt < max_retries - 1:
+                time.sleep(2)
+
+    print(f"    ❌ 图片下载/转换最终失败（已重试 {max_retries} 次）: {last_error}")
     return None
 
 
@@ -296,7 +412,7 @@ def git_commit_files(output_dir, batch_num):
 def _process_row_worker(args):
     """
     单个进程处理一行磁力链接：
-      1. 调用 API 获取信息（通过全局限速器保证 <= 5 次/分钟）
+      1. 调用 API 获取信息（通过全局限速器保证 <= 4 次/分钟）
       2. 行内并行下载并转换所有截图（线程池）
       3. 返回结果字典
     """
@@ -739,9 +855,10 @@ def main():
     print(f"  BATCH_SIZE: {BATCH_SIZE} 行/批次（每批保存一个 Excel 文件）")
     print(f"  MAX_WORKERS: {MAX_WORKERS} 跨行并行进程")
     print(f"  SCREENSHOT_THREADS: {SCREENSHOT_THREADS} 行内截图并行线程")
-    print(f"  API_RATE_LIMIT: {API_RATE_LIMIT} 次/分钟（官方限制）")
+    print(f"  API_RATE_LIMIT: {API_RATE_LIMIT} 次/分钟（官方限制 5，留冗余）")
+    print(f"  API_MAX_RETRIES: {API_MAX_RETRIES} 次（429 指数退避，5xx 线性退避）")
+    print(f"  MAX_RETRIES: {MAX_RETRIES} 次（图片下载）")
     print(f"  MAX_RUN_TIME: {MAX_RUN_TIME} 分钟")
-    print(f"  MAX_RETRIES: {MAX_RETRIES} 次")
     print(f"  TIMEOUT: {TIMEOUT} 秒")
     print("-" * 60)
 
