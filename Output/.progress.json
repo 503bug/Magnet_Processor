@@ -493,11 +493,11 @@
     "batches_created": []
   },
   "Input/File_002.xlsx": {
-    "processed_rows": 4000,
+    "processed_rows": 4050,
     "total_rows": 5000,
     "file_hash": "e4a959ceebe191b29519da4d60e1a486",
     "completed": false,
-    "last_modified": "2026-10-01T04:54:49.638758",
+    "last_modified": "2026-10-01T05:08:22.334686",
     "batches_created": [
       1,
       2,
@@ -578,7 +578,8 @@
       77,
       78,
       79,
-      80
+      80,
+      81
     ]
   },
   "Input/File_064.xlsx": {
@@ -893,5 +894,5 @@
     "last_modified": "",
     "batches_created": []
   },
-  "_updated_at": "2026-10-01T04:54:49.638767"
+  "_updated_at": "2026-10-01T05:08:22.334696"
 }
