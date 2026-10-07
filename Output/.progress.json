@@ -1,0 +1,693 @@
+{
+  "Input/File_080.xlsx": {
+    "processed_rows": 0,
+    "total_rows": 0,
+    "file_hash": "ca4a7b4e68110b47488fcf55c3743be3",
+    "completed": false,
+    "last_modified": "",
+    "batches_created": []
+  },
+  "Input/File_018.xlsx": {
+    "processed_rows": 0,
+    "total_rows": 0,
+    "file_hash": "17bcaba880ad673b09c05d1efebed41c",
+    "completed": false,
+    "last_modified": "",
+    "batches_created": []
+  },
+  "Input/File_038.xlsx": {
+    "processed_rows": 0,
+    "total_rows": 0,
+    "file_hash": "d0aa8f652b457d7530c160ac736d58de",
+    "completed": false,
+    "last_modified": "",
+    "batches_created": []
+  },
+  "Input/File_075.xlsx": {
+    "processed_rows": 0,
+    "total_rows": 0,
+    "file_hash": "0b0a850ff60c08e98c29b06dea52bf61",
+    "completed": false,
+    "last_modified": "",
+    "batches_created": []
+  },
+  "Input/File_011.xlsx": {
+    "processed_rows": 0,
+    "total_rows": 0,
+    "file_hash": "2853048f3ce59b81994448d58032f637",
+    "completed": false,
+    "last_modified": "",
+    "batches_created": []
+  },
+  "Input/File_023.xlsx": {
+    "processed_rows": 0,
+    "total_rows": 0,
+    "file_hash": "340cbb4869bcd857f761a32ed4e43030",
+    "completed": false,
+    "last_modified": "",
+    "batches_created": []
+  },
+  "Input/File_043.xlsx": {
+    "processed_rows": 0,
+    "total_rows": 0,
+    "file_hash": "0720f2043ef965147f8e09b998bc45e8",
+    "completed": false,
+    "last_modified": "",
+    "batches_created": []
+  },
+  "Input/File_073.xlsx": {
+    "processed_rows": 0,
+    "total_rows": 0,
+    "file_hash": "0f44fb8c82a3d37b68d6930a9a654851",
+    "completed": false,
+    "last_modified": "",
+    "batches_created": []
+  },
+  "Input/File_054.xlsx": {
+    "processed_rows": 0,
+    "total_rows": 0,
+    "file_hash": "b0d480bd5b4ec20647e143a1dc18bb75",
+    "completed": false,
+    "last_modified": "",
+    "batches_created": []
+  },
+  "Input/File_012.xlsx": {
+    "processed_rows": 0,
+    "total_rows": 0,
+    "file_hash": "91a8fe04c865050acb98b8d1b81d93ea",
+    "completed": false,
+    "last_modified": "",
+    "batches_created": []
+  },
+  "Input/File_015.xlsx": {
+    "processed_rows": 0,
+    "total_rows": 0,
+    "file_hash": "17f276cc21338cf94d4cf335860e82c6",
+    "completed": false,
+    "last_modified": "",
+    "batches_created": []
+  },
+  "Input/File_003.xlsx": {
+    "processed_rows": 0,
+    "total_rows": 0,
+    "file_hash": "2ce60d00b0991208dcccf47d5663a53b",
+    "completed": false,
+    "last_modified": "",
+    "batches_created": []
+  },
+  "Input/File_079.xlsx": {
+    "processed_rows": 0,
+    "total_rows": 0,
+    "file_hash": "53f049eb92c3c7eb5cff48059dec44d0",
+    "completed": false,
+    "last_modified": "",
+    "batches_created": []
+  },
+  "Input/File_037.xlsx": {
+    "processed_rows": 0,
+    "total_rows": 0,
+    "file_hash": "bed1e380fd3cdfcc7fef5352454fc811",
+    "completed": false,
+    "last_modified": "",
+    "batches_created": []
+  },
+  "Input/File_031.xlsx": {
+    "processed_rows": 0,
+    "total_rows": 0,
+    "file_hash": "655ac2376f2ec49f19798dac05fcd95a",
+    "completed": false,
+    "last_modified": "",
+    "batches_created": []
+  },
+  "Input/File_055.xlsx": {
+    "processed_rows": 0,
+    "total_rows": 0,
+    "file_hash": "5586c7d13cd2a7b5820cabba578e6e2f",
+    "completed": false,
+    "last_modified": "",
+    "batches_created": []
+  },
+  "Input/File_044.xlsx": {
+    "processed_rows": 0,
+    "total_rows": 0,
+    "file_hash": "a071ade604d8a4b2f85d3a187a7249ee",
+    "completed": false,
+    "last_modified": "",
+    "batches_created": []
+  },
+  "Input/File_072.xlsx": {
+    "processed_rows": 0,
+    "total_rows": 0,
+    "file_hash": "d8d3ad2860c1081d70572671cdeb798f",
+    "completed": false,
+    "last_modified": "",
+    "batches_created": []
+  },
+  "Input/File_086.xlsx": {
+    "processed_rows": 0,
+    "total_rows": 0,
+    "file_hash": "1f89f6a6d97fc770fcfe8f3307d0cee4",
+    "completed": false,
+    "last_modified": "",
+    "batches_created": []
+  },
+  "Input/File_046.xlsx": {
+    "processed_rows": 0,
+    "total_rows": 0,
+    "file_hash": "c0170fe869adf3402055070e5cb14bbf",
+    "completed": false,
+    "last_modified": "",
+    "batches_created": []
+  },
+  "Input/File_071.xlsx": {
+    "processed_rows": 0,
+    "total_rows": 0,
+    "file_hash": "b556dd8fae5f42186d0f4e7a18f4a274",
+    "completed": false,
+    "last_modified": "",
+    "batches_created": []
+  },
+  "Input/File_062.xlsx": {
+    "processed_rows": 0,
+    "total_rows": 0,
+    "file_hash": "1083e3d4dfcec9456112f079969a5168",
+    "completed": false,
+    "last_modified": "",
+    "batches_created": []
+  },
+  "Input/File_041.xlsx": {
+    "processed_rows": 0,
+    "total_rows": 0,
+    "file_hash": "6a53f1cd5358b61a859805ee14fbb967",
+    "completed": false,
+    "last_modified": "",
+    "batches_created": []
+  },
+  "Input/File_061.xlsx": {
+    "processed_rows": 0,
+    "total_rows": 0,
+    "file_hash": "f8094ef05ceca18659f83d8c3752cbf9",
+    "completed": false,
+    "last_modified": "",
+    "batches_created": []
+  },
+  "Input/File_057.xlsx": {
+    "processed_rows": 0,
+    "total_rows": 0,
+    "file_hash": "e2dc653c9299ee02a0569d693a0fdb59",
+    "completed": false,
+    "last_modified": "",
+    "batches_created": []
+  },
+  "Input/File_019.xlsx": {
+    "processed_rows": 0,
+    "total_rows": 0,
+    "file_hash": "022736430163d76f5b23b433d80e89c1",
+    "completed": false,
+    "last_modified": "",
+    "batches_created": []
+  },
+  "Input/File_040.xlsx": {
+    "processed_rows": 0,
+    "total_rows": 0,
+    "file_hash": "85daae2d595baef556050afc9697618f",
+    "completed": false,
+    "last_modified": "",
+    "batches_created": []
+  },
+  "Input/File_084.xlsx": {
+    "processed_rows": 0,
+    "total_rows": 0,
+    "file_hash": "2cb962321b2309817b391749ffdbaae9",
+    "completed": false,
+    "last_modified": "",
+    "batches_created": []
+  },
+  "Input/File_016.xlsx": {
+    "processed_rows": 0,
+    "total_rows": 0,
+    "file_hash": "5a9c14ba30927416511c8e124c32e506",
+    "completed": false,
+    "last_modified": "",
+    "batches_created": []
+  },
+  "Input/File_047.xlsx": {
+    "processed_rows": 0,
+    "total_rows": 0,
+    "file_hash": "bce6995cf5b5927c528982164f726517",
+    "completed": false,
+    "last_modified": "",
+    "batches_created": []
+  },
+  "Input/File_005.xlsx": {
+    "processed_rows": 0,
+    "total_rows": 0,
+    "file_hash": "f93c7cc68a39ae76d635824c3db83f5e",
+    "completed": false,
+    "last_modified": "",
+    "batches_created": []
+  },
+  "Input/File_067.xlsx": {
+    "processed_rows": 0,
+    "total_rows": 0,
+    "file_hash": "f094024c2086b569502985e13498de85",
+    "completed": false,
+    "last_modified": "",
+    "batches_created": []
+  },
+  "Input/File_030.xlsx": {
+    "processed_rows": 0,
+    "total_rows": 0,
+    "file_hash": "0a3e28458470f44d1595fd4be0064c6f",
+    "completed": false,
+    "last_modified": "",
+    "batches_created": []
+  },
+  "Input/File_078.xlsx": {
+    "processed_rows": 0,
+    "total_rows": 0,
+    "file_hash": "e65453adb321887464f54db62a4a757d",
+    "completed": false,
+    "last_modified": "",
+    "batches_created": []
+  },
+  "Input/File_027.xlsx": {
+    "processed_rows": 0,
+    "total_rows": 0,
+    "file_hash": "de4a762b897f5b5030131ec7d386e285",
+    "completed": false,
+    "last_modified": "",
+    "batches_created": []
+  },
+  "Input/File_014.xlsx": {
+    "processed_rows": 0,
+    "total_rows": 0,
+    "file_hash": "47ccdd3800ad3759ffceb7d48989154e",
+    "completed": false,
+    "last_modified": "",
+    "batches_created": []
+  },
+  "Input/File_051.xlsx": {
+    "processed_rows": 0,
+    "total_rows": 0,
+    "file_hash": "c7462c37810fe3df79ed1cc9cd3122c4",
+    "completed": false,
+    "last_modified": "",
+    "batches_created": []
+  },
+  "Input/File_026.xlsx": {
+    "processed_rows": 0,
+    "total_rows": 0,
+    "file_hash": "2ce1b2dc297b1f6f502a7076fc978d2a",
+    "completed": false,
+    "last_modified": "",
+    "batches_created": []
+  },
+  "Input/File_010.xlsx": {
+    "processed_rows": 0,
+    "total_rows": 0,
+    "file_hash": "dc64d7002496c5f2be63ffff20438a76",
+    "completed": false,
+    "last_modified": "",
+    "batches_created": []
+  },
+  "Input/File_020.xlsx": {
+    "processed_rows": 0,
+    "total_rows": 0,
+    "file_hash": "5387110c9065886f91f4eed26178019c",
+    "completed": false,
+    "last_modified": "",
+    "batches_created": []
+  },
+  "Input/File_060.xlsx": {
+    "processed_rows": 0,
+    "total_rows": 0,
+    "file_hash": "5ffb056dda1fdf7e3135c6bc364b22df",
+    "completed": false,
+    "last_modified": "",
+    "batches_created": []
+  },
+  "Input/File_001.xlsx": {
+    "processed_rows": 50,
+    "total_rows": 5000,
+    "file_hash": "a7dd31dd93afb358e6f7bd7f71e0f9c2",
+    "completed": false,
+    "last_modified": "2026-10-07T07:30:58.963723",
+    "batches_created": [
+      1
+    ]
+  },
+  "Input/File_033.xlsx": {
+    "processed_rows": 0,
+    "total_rows": 0,
+    "file_hash": "49cbcc99a5a782d22c1c1b47f58af9f2",
+    "completed": false,
+    "last_modified": "",
+    "batches_created": []
+  },
+  "Input/File_009.xlsx": {
+    "processed_rows": 0,
+    "total_rows": 0,
+    "file_hash": "1981493f48b68e0a37e3e1c0501eccd7",
+    "completed": false,
+    "last_modified": "",
+    "batches_created": []
+  },
+  "Input/File_074.xlsx": {
+    "processed_rows": 0,
+    "total_rows": 0,
+    "file_hash": "019b7c844a74ab5a25786ccce7c958d3",
+    "completed": false,
+    "last_modified": "",
+    "batches_created": []
+  },
+  "Input/File_032.xlsx": {
+    "processed_rows": 0,
+    "total_rows": 0,
+    "file_hash": "aed5ab31c561c88072f902f2d12aad61",
+    "completed": false,
+    "last_modified": "",
+    "batches_created": []
+  },
+  "Input/File_049.xlsx": {
+    "processed_rows": 0,
+    "total_rows": 0,
+    "file_hash": "57057b60deb75b28bcbaf4e3c325f1d1",
+    "completed": false,
+    "last_modified": "",
+    "batches_created": []
+  },
+  "Input/File_002.xlsx": {
+    "processed_rows": 0,
+    "total_rows": 0,
+    "file_hash": "2c3189d59accee9a3e70e0e047651757",
+    "completed": false,
+    "last_modified": "",
+    "batches_created": []
+  },
+  "Input/File_064.xlsx": {
+    "processed_rows": 0,
+    "total_rows": 0,
+    "file_hash": "8dea1403539f3d75fb7d775feb543d60",
+    "completed": false,
+    "last_modified": "",
+    "batches_created": []
+  },
+  "Input/File_052.xlsx": {
+    "processed_rows": 0,
+    "total_rows": 0,
+    "file_hash": "7475fc16d35c08010abc3d48ec9e9b9f",
+    "completed": false,
+    "last_modified": "",
+    "batches_created": []
+  },
+  "Input/File_070.xlsx": {
+    "processed_rows": 0,
+    "total_rows": 0,
+    "file_hash": "3776adae16c0211d7f01b63a9f2b3215",
+    "completed": false,
+    "last_modified": "",
+    "batches_created": []
+  },
+  "Input/File_039.xlsx": {
+    "processed_rows": 0,
+    "total_rows": 0,
+    "file_hash": "987a15963f82269d148afd60733c0cae",
+    "completed": false,
+    "last_modified": "",
+    "batches_created": []
+  },
+  "Input/File_063.xlsx": {
+    "processed_rows": 0,
+    "total_rows": 0,
+    "file_hash": "0567764af6ee8ad09ecb5191361eb652",
+    "completed": false,
+    "last_modified": "",
+    "batches_created": []
+  },
+  "Input/File_048.xlsx": {
+    "processed_rows": 0,
+    "total_rows": 0,
+    "file_hash": "dd97c1610f0e2db602256a467f974544",
+    "completed": false,
+    "last_modified": "",
+    "batches_created": []
+  },
+  "Input/File_058.xlsx": {
+    "processed_rows": 0,
+    "total_rows": 0,
+    "file_hash": "bb8753287be7eac5cf5e762dc4198b20",
+    "completed": false,
+    "last_modified": "",
+    "batches_created": []
+  },
+  "Input/File_034.xlsx": {
+    "processed_rows": 0,
+    "total_rows": 0,
+    "file_hash": "29623620b64292ad899d57f3ddbd0d07",
+    "completed": false,
+    "last_modified": "",
+    "batches_created": []
+  },
+  "Input/File_042.xlsx": {
+    "processed_rows": 0,
+    "total_rows": 0,
+    "file_hash": "d1fc6934f2ee18f929792e9205014b99",
+    "completed": false,
+    "last_modified": "",
+    "batches_created": []
+  },
+  "Input/File_082.xlsx": {
+    "processed_rows": 0,
+    "total_rows": 0,
+    "file_hash": "d355a28d73dfff488113a5de9ec77935",
+    "completed": false,
+    "last_modified": "",
+    "batches_created": []
+  },
+  "Input/File_076.xlsx": {
+    "processed_rows": 0,
+    "total_rows": 0,
+    "file_hash": "6a99da739b4554378f9f24a97b318c74",
+    "completed": false,
+    "last_modified": "",
+    "batches_created": []
+  },
+  "Input/File_068.xlsx": {
+    "processed_rows": 0,
+    "total_rows": 0,
+    "file_hash": "bb5fa710320c25d2291533e32b491a05",
+    "completed": false,
+    "last_modified": "",
+    "batches_created": []
+  },
+  "Input/File_006.xlsx": {
+    "processed_rows": 0,
+    "total_rows": 0,
+    "file_hash": "ec230002960abdeed9abbe49435a24d3",
+    "completed": false,
+    "last_modified": "",
+    "batches_created": []
+  },
+  "Input/File_035.xlsx": {
+    "processed_rows": 0,
+    "total_rows": 0,
+    "file_hash": "577ba0498171a1d97619ff329f01865d",
+    "completed": false,
+    "last_modified": "",
+    "batches_created": []
+  },
+  "Input/File_059.xlsx": {
+    "processed_rows": 0,
+    "total_rows": 0,
+    "file_hash": "505a854e470c3d878aa4224386bf203f",
+    "completed": false,
+    "last_modified": "",
+    "batches_created": []
+  },
+  "Input/File_056.xlsx": {
+    "processed_rows": 0,
+    "total_rows": 0,
+    "file_hash": "1fab28856e156681ceb7bcc5cb757f67",
+    "completed": false,
+    "last_modified": "",
+    "batches_created": []
+  },
+  "Input/File_029.xlsx": {
+    "processed_rows": 0,
+    "total_rows": 0,
+    "file_hash": "90be31a99cf139a23858a7827b700e71",
+    "completed": false,
+    "last_modified": "",
+    "batches_created": []
+  },
+  "Input/File_022.xlsx": {
+    "processed_rows": 0,
+    "total_rows": 0,
+    "file_hash": "327dd8a35a520b633bff609975482e7b",
+    "completed": false,
+    "last_modified": "",
+    "batches_created": []
+  },
+  "Input/File_045.xlsx": {
+    "processed_rows": 0,
+    "total_rows": 0,
+    "file_hash": "c62081707eda15304928a7fdeb735744",
+    "completed": false,
+    "last_modified": "",
+    "batches_created": []
+  },
+  "Input/File_007.xlsx": {
+    "processed_rows": 0,
+    "total_rows": 0,
+    "file_hash": "82f2507e19478e5df5f2651e90175b56",
+    "completed": false,
+    "last_modified": "",
+    "batches_created": []
+  },
+  "Input/File_085.xlsx": {
+    "processed_rows": 0,
+    "total_rows": 0,
+    "file_hash": "2b8ce7b41c7074c4b47714804ab15612",
+    "completed": false,
+    "last_modified": "",
+    "batches_created": []
+  },
+  "Input/File_050.xlsx": {
+    "processed_rows": 0,
+    "total_rows": 0,
+    "file_hash": "344b198652604ef2454eec3db870e4d4",
+    "completed": false,
+    "last_modified": "",
+    "batches_created": []
+  },
+  "Input/File_036.xlsx": {
+    "processed_rows": 0,
+    "total_rows": 0,
+    "file_hash": "a1fdba179458953b4ea4d4076d6ffd83",
+    "completed": false,
+    "last_modified": "",
+    "batches_created": []
+  },
+  "Input/File_008.xlsx": {
+    "processed_rows": 0,
+    "total_rows": 0,
+    "file_hash": "7a6db1c938dd9c44d3658ba27107ac1e",
+    "completed": false,
+    "last_modified": "",
+    "batches_created": []
+  },
+  "Input/File_065.xlsx": {
+    "processed_rows": 0,
+    "total_rows": 0,
+    "file_hash": "52bf47d7ec424c6194b1dc140786b4aa",
+    "completed": false,
+    "last_modified": "",
+    "batches_created": []
+  },
+  "Input/File_013.xlsx": {
+    "processed_rows": 0,
+    "total_rows": 0,
+    "file_hash": "ae4d0a27b845eb0c0fb7e60e8c296e0d",
+    "completed": false,
+    "last_modified": "",
+    "batches_created": []
+  },
+  "Input/File_025.xlsx": {
+    "processed_rows": 0,
+    "total_rows": 0,
+    "file_hash": "7aad60aca42617e4e6eb66324be496f7",
+    "completed": false,
+    "last_modified": "",
+    "batches_created": []
+  },
+  "Input/File_081.xlsx": {
+    "processed_rows": 0,
+    "total_rows": 0,
+    "file_hash": "8933bb3340da6472a585276397decc48",
+    "completed": false,
+    "last_modified": "",
+    "batches_created": []
+  },
+  "Input/File_083.xlsx": {
+    "processed_rows": 0,
+    "total_rows": 0,
+    "file_hash": "8a6ebc2888244cd89e8a10009eceb4cf",
+    "completed": false,
+    "last_modified": "",
+    "batches_created": []
+  },
+  "Input/File_017.xlsx": {
+    "processed_rows": 0,
+    "total_rows": 0,
+    "file_hash": "6fd01b45ded9094074a0c31073a79a80",
+    "completed": false,
+    "last_modified": "",
+    "batches_created": []
+  },
+  "Input/File_069.xlsx": {
+    "processed_rows": 0,
+    "total_rows": 0,
+    "file_hash": "617e164d27877aba30a1794966cbafe1",
+    "completed": false,
+    "last_modified": "",
+    "batches_created": []
+  },
+  "Input/File_077.xlsx": {
+    "processed_rows": 0,
+    "total_rows": 0,
+    "file_hash": "7c13c5c5415449664107a998281c785d",
+    "completed": false,
+    "last_modified": "",
+    "batches_created": []
+  },
+  "Input/File_066.xlsx": {
+    "processed_rows": 0,
+    "total_rows": 0,
+    "file_hash": "f443b175787256f3ef204b4679a470bd",
+    "completed": false,
+    "last_modified": "",
+    "batches_created": []
+  },
+  "Input/File_028.xlsx": {
+    "processed_rows": 0,
+    "total_rows": 0,
+    "file_hash": "4ed3f93783a32f744da11c13b79c019a",
+    "completed": false,
+    "last_modified": "",
+    "batches_created": []
+  },
+  "Input/File_024.xlsx": {
+    "processed_rows": 0,
+    "total_rows": 0,
+    "file_hash": "b064a6c18ee17c104992851f7de5143d",
+    "completed": false,
+    "last_modified": "",
+    "batches_created": []
+  },
+  "Input/File_004.xlsx": {
+    "processed_rows": 0,
+    "total_rows": 0,
+    "file_hash": "ff3a9d69b6bce432e9871f0515e6734b",
+    "completed": false,
+    "last_modified": "",
+    "batches_created": []
+  },
+  "Input/File_021.xlsx": {
+    "processed_rows": 0,
+    "total_rows": 0,
+    "file_hash": "de98ff1c41b9e59b034cfcaaab7b5a97",
+    "completed": false,
+    "last_modified": "",
+    "batches_created": []
+  },
+  "Input/File_053.xlsx": {
+    "processed_rows": 0,
+    "total_rows": 0,
+    "file_hash": "4cdee621ff761301e267b2f8730444a7",
+    "completed": false,
+    "last_modified": "",
+    "batches_created": []
+  },
+  "_updated_at": "2026-10-07T07:30:58.963734"
+}
