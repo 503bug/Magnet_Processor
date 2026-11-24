@@ -1184,8 +1184,8 @@
     "processed_rows": 5000,
     "total_rows": 5000,
     "file_hash": "de4a762b897f5b5030131ec7d386e285",
-    "completed": false,
-    "last_modified": "2026-11-24T17:34:49.026684",
+    "completed": true,
+    "last_modified": "2026-11-24T17:35:13.180576",
     "batches_created": [
       1,
       2,
@@ -3072,12 +3072,14 @@
     "batches_created": []
   },
   "Input/File_028.xlsx": {
-    "processed_rows": 0,
-    "total_rows": 0,
+    "processed_rows": 50,
+    "total_rows": 5000,
     "file_hash": "4ed3f93783a32f744da11c13b79c019a",
     "completed": false,
-    "last_modified": "",
-    "batches_created": []
+    "last_modified": "2026-11-24T17:50:54.911522",
+    "batches_created": [
+      1
+    ]
   },
   "Input/File_024.xlsx": {
     "processed_rows": 5000,
@@ -3414,5 +3416,5 @@
     "last_modified": "",
     "batches_created": []
   },
-  "_updated_at": "2026-11-24T17:34:49.026694"
+  "_updated_at": "2026-11-24T17:50:54.911534"
 }
